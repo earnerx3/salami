@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Eid Salami App</title>
+    
+    <!-- Telegram Web App API -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Hind Siliguri', sans-serif;
+            background-color: #f0f2f5;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .bottom-nav {
+            background-color: #1e252b;
+            border-top-left-radius: 30px;
+            border-top-right-radius: 30px;
+        }
+
+        .nav-item.active { color: #ffb800; }
+
+        /* Custom Toast */
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 50px;
+            padding: 12px 20px;
+            position: fixed;
+            z-index: 100;
+            left: 50%;
+            bottom: 80px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s, bottom 0.3s;
+        }
+        #toast.show { visibility: visible; opacity: 1; bottom: 100px; }
+
+        .header-bg { background: linear-gradient(180deg, #057a3b 0%, #039e4a 100%); }
+
+        /* Glassmorphism Notice Modal */
+        .glass-modal {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Splash Screen Effects */
+        .glow-effect {
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.8), 0 0 60px rgba(34, 197, 94, 0.5);
+        }
+    </style>
+</head>
+<body class="flex justify-center h-screen overflow-hidden bg-gray-900">
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" class="absolute inset-0 z-[100] bg-[#1e252b] flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="relative flex items-center justify-center mb-8">
+            <div class="absolute w-32 h-32 bg-green-500 rounded-full blur-2xl opacity-40 animate-pulse"></div>
+            <div class="w-24 h-24 bg-gradient-to-tr from-green-600 to-green-400 rounded-full flex items-center justify-center z-10 glow-effect animate-bounce">
+                <i class="fa-solid fa-kaaba text-5xl text-white"></i>
+            </div>
+        </div>
+        <h1 class="text-3xl font-bold text-white mb-2">Eid Salami</h1>
+        <p class="text-green-400 text-sm font-medium tracking-widest uppercase mb-8">Loading Data...</p>
+        <div class="w-48 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+            <div class="h-full bg-green-500 w-full rounded-full animate-[progress_1.5s_ease-in-out_infinite]" style="transform-origin: left; animation: loader 1s infinite alternate;"></div>
+        </div>
+        <style>@keyframes loader { 0% { width: 0%; } 100% { width: 100%; } }</style>
+    </div>
+
+    <!-- NOTICE MODAL -->
+    <div id="notice-modal" class="absolute inset-0 z-[90] bg-black/60 hidden items-center justify-center px-4 backdrop-blur-sm transition-opacity">
+        <div class="glass-modal w-full max-w-sm p-6 text-center relative text-white">
+            <button onclick="window.closeNotice()" class="absolute top-4 right-4 text-white/80 hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <div class="w-16 h-16 bg-yellow-400/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-yellow-400/50">
+                <i class="fa-solid fa-bell text-3xl text-yellow-400"></i>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">জরুরী নোটিশ!</h2>
+            <p id="notice-text" class="text-sm text-gray-200 leading-relaxed mb-6"></p>
+            <button onclick="window.closeNotice()" class="w-full bg-green-500 text-white font-bold py-3 rounded-xl shadow-lg active:scale-95 transition-transform">
+                বুঝতে পেরেছি
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Container -->
+    <div class="w-full max-w-md bg-[#f4f6f9] h-full flex flex-col relative shadow-2xl overflow-hidden">
+        
+        <!-- App Bar -->
+        <div class="bg-[#1e252b] text-white p-4 flex justify-between items-center z-20">
+            <div class="flex items-center gap-3">
+                <h1 class="text-lg font-semibold flex items-center gap-2"><i class="fa-solid fa-moon text-yellow-400"></i> Eid Salami</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="header-bot-status" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            </div>
+        </div>
+
+        <!-- Main Scrollable Content -->
+        <div class="flex-1 overflow-y-auto hide-scrollbar pb-24 relative" id="main-content">
+            
+            <!-- ====== TAB: HOME ====== -->
+            <div id="tab-home" class="view-section block">
+                <div class="header-bg pt-4 pb-20 px-4 rounded-b-[40px] relative z-0">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-2 bg-white/20 backdrop-blur-sm pr-4 p-1 rounded-full border border-white/30">
+                            <div class="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center font-bold text-gray-900 border-2 border-green-300" id="user-avatar">U</div>
+                            <div>
+                                <h3 class="text-white font-bold text-sm leading-tight uppercase truncate max-w-[120px]" id="user-name">Loading</h3>
+                                <p class="text-yellow-300 text-xs" id="user-id">ID: ---</p>
+                            </div>
+                        </div>
+                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/30 text-white cursor-pointer active:scale-90">
+                            <i class="fa-solid fa-headset text-lg"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-5 -mt-16 relative z-10">
+                    <div class="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+                        <div class="text-center mb-4">
+                            <p class="text-gray-500 text-sm font-medium">মোট সালামি 🤲🕋</p>
+                            <h2 class="text-4xl font-bold text-green-600 mt-2">
+                                <span id="main-balance">0.00</span> <span class="text-yellow-500 text-3xl">টাকা</span>
+                            </h2>
+                        </div>
+                        <div class="border-t border-dashed border-gray-300 my-4"></div>
+                        <div class="flex justify-between text-center px-4">
+                            <div>
+                                <p class="text-lg font-bold text-gray-800" id="deposit-amount">0.00</p>
+                                <p class="text-xs text-gray-500 mt-1">জমা হয়েছে 🪙</p>
+                            </div>
+                            <div>
+                                <p class="text-lg font-bold text-gray-800" id="friends-count">0</p>
+                                <p class="text-xs text-gray-500 mt-1">বন্ধুরা 👥</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="px-4 mt-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-kaaba text-green-700"></i> সালামি ভিডিও 🕋
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3" id="video-tasks-container"></div>
+                </div>
+
+                <div class="px-4 mt-8 mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-person-praying text-green-600"></i> স্পেশাল কাজ 📿
+                    </h3>
+                    <div class="flex flex-col gap-3" id="special-tasks-container"></div>
+                </div>
+            </div>
+
+            <!-- ====== TAB: REFERRAL ====== -->
+            <div id="tab-referral" class="view-section hidden pt-4">
+                <div class="px-4 mb-6">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-mosque text-green-700"></i> দাওয়াত দিন 🕌
+                    </h3>
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border-l-4 border-yellow-400 mt-4 text-center">
+                        <p class="text-gray-700 font-medium text-lg leading-relaxed">
+                            বন্ধুদের দাওয়াত দিন! প্রতি সফল রেফারে পাবেন <span class="text-yellow-500 font-bold text-xl" id="ref-bonus-display">10.00</span> টাকা বোনাস! 🌙
+                        </p>
+                        
+                        <div class="mt-6 bg-gray-50 border border-gray-200 rounded-xl p-3 flex items-center justify-between">
+                            <span class="text-gray-500 text-sm truncate font-medium mr-3" id="referral-link-text">https://t.me/...</span>
+                            <button onclick="window.copyReferralLink()" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md active:scale-95 transition-transform shrink-0">
+                                <i class="fa-regular fa-copy"></i> কপি
+                            </button>
+                        </div>
+                        <button onclick="window.shareReferralLink()" class="w-full mt-3 bg-[#2a303c] text-white px-6 py-3 rounded-xl font-bold shadow-md active:scale-95 transition-transform">
+                            <i class="fa-solid fa-share-nodes mr-2"></i> বন্ধুদের শেয়ার করুন
+                        </button>
+                    </div>
+                </div>
+
+                <div class="px-4 mt-8">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-gift text-green-600"></i> রেফার মাইলস্টোন 🎁
+                    </h3>
+                    <div class="flex flex-col gap-3" id="milestones-container"></div>
+                </div>
+            </div>
+
+            <!-- ====== TAB: LEADERBOARD ====== -->
+            <div id="tab-leaderboard" class="view-section hidden pt-6 px-4">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-gray-800 flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-star text-yellow-400 text-lg"></i> লিডারবোর্ড <i class="fa-solid fa-moon text-yellow-400 text-lg"></i>
+                    </h2>
+                    <p class="text-gray-400 text-sm mt-1">সেরা ২০ জন সালামি শিকারি</p>
+                </div>
+
+                <!-- Top 3 Podium (Dynamically injected) -->
+                <div class="flex justify-center items-end gap-2 mb-10 h-40" id="podium-container"></div>
+
+                <!-- List Ranking -->
+                <div class="bg-white rounded-3xl p-4 shadow-sm mb-6" id="leaderboard-list"></div>
+            </div>
+
+            <!-- ====== TAB: WITHDRAW ====== -->
+            <div id="tab-withdraw" class="view-section hidden pt-6 px-4">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-hand-holding-dollar text-green-700"></i> সালামি নিন 🤲
+                </h3>
+                
+                <div class="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                    <form id="withdraw-form" onsubmit="window.handleWithdraw(event)">
+                        <div class="mb-4 relative">
+                            <i class="fa-solid fa-building-columns absolute left-4 top-1/2 transform -translate-y-1/2 text-green-600"></i>
+                            <select id="withdraw-method" required class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-12 rounded-xl appearance-none outline-none focus:border-green-500 font-medium">
+                                <option value="" disabled selected>মাধ্যম সিলেক্ট করুন</option>
+                                <option value="bkash">bKash (বিকাশ)</option>
+                                <option value="nagad">Nagad (নগদ)</option>
+                                <option value="rocket">Rocket (রকেট)</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        </div>
+
+                        <div class="mb-4 relative">
+                            <i class="fa-solid fa-address-card absolute left-4 top-1/2 transform -translate-y-1/2 text-green-600"></i>
+                            <input type="number" id="withdraw-number" required placeholder="আপনার ওয়ালেট/বিকাশ নাম্বার" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-12 rounded-xl outline-none focus:border-green-500 font-medium">
+                        </div>
+
+                        <div class="mb-6">
+                            <div class="relative">
+                                <i class="fa-solid fa-coins absolute left-4 top-1/2 transform -translate-y-1/2 text-green-600"></i>
+                                <input type="number" id="withdraw-amount" required placeholder="টাকার পরিমাণ" class="w-full bg-gray-50 border border-gray-200 text-gray-700 py-3 px-12 rounded-xl outline-none focus:border-green-500 font-medium">
+                            </div>
+                            <div class="flex justify-between items-center mt-2 ml-2 pr-2">
+                                <p class="text-xs text-gray-500">বর্তমান ব্যালেন্স: <span id="withdraw-balance-display" class="font-bold text-green-600">0.00</span> ৳</p>
+                                <p class="text-xs text-red-400 font-medium">মিনিমাম: <span id="withdraw-min-display">50</span> ৳</p>
+                            </div>
+                        </div>
+
+                        <button type="submit" id="withdraw-btn" class="w-full bg-green-600 text-white font-bold py-3.5 rounded-xl shadow-[0_4px_15px_rgba(22,163,74,0.3)] active:scale-[0.98] transition-transform">
+                            টাকা উত্তোলনের রিকোয়েস্ট
+                        </button>
+                    </form>
+                </div>
+
+                <div class="mt-8 mb-4">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-scroll text-green-700"></i> লেনদেনের ইতিহাস 📜
+                    </h3>
+                    <div id="history-container" class="space-y-3"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav absolute bottom-0 w-full h-16 flex justify-around items-center px-2 z-50">
+            <button class="nav-btn nav-item active flex flex-col items-center justify-center w-14 h-full text-gray-400 transition-colors" onclick="window.switchTab('tab-home', this)">
+                <i class="fa-solid fa-mosque text-xl mb-1"></i>
+            </button>
+            <button class="nav-btn nav-item flex flex-col items-center justify-center w-14 h-full text-gray-400 transition-colors" onclick="window.switchTab('tab-referral', this)">
+                <i class="fa-solid fa-user-friends text-xl mb-1"></i>
+            </button>
+            <button class="nav-btn nav-item flex flex-col items-center justify-center w-14 h-full text-gray-400 transition-colors" onclick="window.switchTab('tab-leaderboard', this)">
+                <i class="fa-solid fa-moon text-xl mb-1"></i>
+            </button>
+            <button class="nav-btn nav-item flex flex-col items-center justify-center w-14 h-full text-gray-400 transition-colors" onclick="window.switchTab('tab-withdraw', this)">
+                <i class="fa-solid fa-user-circle text-xl mb-1"></i>
+            </button>
+        </div>
+
+        <!-- Custom Toast Notification -->
+        <div id="toast">Notification Message</div>
+    </div>
+
+    <!-- Firebase & Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { 
+            getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
+            getDocs, addDoc, increment, query, orderBy, limit, serverTimestamp 
+        } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        // Firebase Configuration (From User)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAr4enOTyCZHw739nm9kNPV0s7i97EOPcU",
+            authDomain: "ed-salami.firebaseapp.com",
+            projectId: "ed-salami",
+            storageBucket: "ed-salami.firebasestorage.app",
+            messagingSenderId: "233356363861",
+            appId: "1:233356363861:web:7d653743bd7ca78f722cdc",
+            measurementId: "G-TBG2S6VYDW"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Telegram Web App Initialization
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
+        // Global State variables
+        let tgUser = tg.initDataUnsafe?.user || { id: "123456789", first_name: "Demo", last_name: "User" };
+        let startParam = tg.initDataUnsafe?.start_param || null;
+        let botUsername = "EidSalamiAppBot"; // Replace with your actual bot username
+
+        let userDocData = { balance: 0, deposited: 0, referredUsersCount: 0, completedTasks: {} };
+        let adminSettings = { referralBonusAmount: 10, minimumWithdraw: 50, noticeIsActive: false, noticeText: "" };
+        let allTasks = [];
+        let withdrawalsHistory =[];
+        let isProcessingTask = false;
+
+        const milestonesData =[
+            { target: 50, reward: 250 },
+            { target: 100, reward: 500 },
+            { target: 250, reward: 1250 },
+            { target: 500, reward: 2500 }
+        ];
+
+        // Core Initialization App Flow
+        async function bootApp() {
+            try {
+                await fetchAdminSettings();
+                await initializeUser();
+                await fetchTasks();
+                await fetchHistory();
+                
+                updateUI();
+                
+                // Hide Splash Screen
+                setTimeout(() => {
+                    const splash = document.getElementById('splash-screen');
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.style.display = 'none', 500);
+                    
+                    // Show Notice if active
+                    if(adminSettings.noticeIsActive && adminSettings.noticeText) {
+                        document.getElementById('notice-text').innerText = adminSettings.noticeText;
+                        const modal = document.getElementById('notice-modal');
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                    }
+                }, 800);
+
+            } catch (error) {
+                console.error("Boot Error:", error);
+                showToast("সার্ভার কানেকশন এরর! দয়া করে রিলোড দিন।");
+            }
+        }
+
+        async function fetchAdminSettings() {
+            const settingsRef = doc(db, 'adminSettings', 'global');
+            const snap = await getDoc(settingsRef);
+            if (snap.exists()) {
+                adminSettings = { ...adminSettings, ...snap.data() };
+            } else {
+                // Auto-seed global settings if completely fresh database
+                await setDoc(settingsRef, adminSettings);
+            }
+            
+            if(adminSettings.appStatus === false) {
+                document.body.innerHTML = '<div class="h-screen w-full flex items-center justify-center bg-gray-900 text-white text-xl font-bold p-6 text-center">App is currently under maintenance. Please check back later.</div>';
+                throw new Error("Maintenance");
+            }
+        }
+
+        async function initializeUser() {
+            const userIdStr = String(tgUser.id);
+            const userRef = doc(db, 'users', userIdStr);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
+                // New User Registration
+                let referredBy = null;
+
+                // Handle Valid Referral
+                if (startParam && startParam !== userIdStr) {
+                    const referrerRef = doc(db, 'users', startParam);
+                    const referrerSnap = await getDoc(referrerRef);
+                    if (referrerSnap.exists()) {
+                        referredBy = startParam;
+                        // Secure increment for referrer
+                        await updateDoc(referrerRef, {
+                            balance: increment(adminSettings.referralBonusAmount),
+                            referredUsersCount: increment(1)
+                        });
+                    }
+                }
+
+                userDocData = {
+                    id: userIdStr,
+                    firstName: tgUser.first_name || "",
+                    lastName: tgUser.last_name || "",
+                    balance: 0,
+                    deposited: 0,
+                    referredUsersCount: 0,
+                    completedTasks: {},
+                    referredBy: referredBy,
+                    createdAt: serverTimestamp()
+                };
+                await setDoc(userRef, userDocData);
+            } else {
+                // Existing User
+                userDocData = userSnap.data();
+                // Ensure default structure
+                if (!userDocData.completedTasks) userDocData.completedTasks = {};
+            }
+        }
+
+        async function fetchTasks() {
+            const tasksRef = collection(db, 'tasks');
+            const q = query(tasksRef, orderBy('id'));
+            const snap = await getDocs(q);
+            
+            if (snap.empty) {
+                // Auto-seed tasks for the very first time developer runs it
+                const defaultTasks =[
+                    { id: 1, type: 'video', title: 'ঈদ স্পেশাল 🕋', icon: 'fa-kaaba', color: 'text-green-600', limit: 30, reward: 0.5 },
+                    { id: 2, type: 'video', title: 'বোনাস অ্যাডস 🎁', icon: 'fa-star-and-crescent', color: 'text-green-600', limit: 30, reward: 0.5 },
+                    { id: 'tg', type: 'special', title: 'Telegram Channel', icon: 'fa-telegram', color: 'text-blue-500', limit: 1, reward: 10 },
+                    { id: 'fb', type: 'special', title: 'Facebook Page', icon: 'fa-facebook', color: 'text-blue-700', limit: 1, reward: 5 }
+                ];
+                for (let t of defaultTasks) {
+                    await setDoc(doc(db, 'tasks', String(t.id)), t);
+                }
+                allTasks = defaultTasks;
+            } else {
+                allTasks = snap.docs.map(d => d.data());
+            }
+        }
+
+        async function fetchHistory() {
+            const q = query(collection(db, 'withdrawals'), orderBy('timestamp', 'desc'), limit(15));
+            const snap = await getDocs(q);
+            withdrawalsHistory = snap.docs
+                .map(d => ({ docId: d.id, ...d.data() }))
+                .filter(w => w.userId === String(tgUser.id)); // Client-side filter for simplicity since we don't have a composite index guaranteed initially
+        }
+
+        // --- UI Updates ---
+        function updateUI() {
+            // Profile Info
+            document.getElementById('user-name').innerText = `${tgUser.first_name || ''} ${tgUser.last_name || ''}`;
+            document.getElementById('user-id').innerText = `ID: ${tgUser.id}`;
+            document.getElementById('user-avatar').innerText = (tgUser.first_name?.[0] || 'U').toUpperCase();
+
+            // Balances
+            const bal = (userDocData.balance || 0).toFixed(2);
+            document.getElementById('main-balance').innerText = bal;
+            document.getElementById('deposit-amount').innerText = (userDocData.deposited || 0).toFixed(2);
+            document.getElementById('friends-count').innerText = userDocData.referredUsersCount || 0;
+            document.getElementById('withdraw-balance-display').innerText = bal;
+            
+            // Referral Tab
+            document.getElementById('ref-bonus-display').innerText = adminSettings.referralBonusAmount.toFixed(2);
+            document.getElementById('referral-link-text').innerText = `https://t.me/${botUsername}/app?startapp=${tgUser.id}`;
+            document.getElementById('withdraw-min-display').innerText = adminSettings.minimumWithdraw;
+            document.getElementById('withdraw-amount').setAttribute('min', adminSettings.minimumWithdraw);
+
+            renderTasks();
+            renderMilestones();
+            renderHistory();
+        }
+
+        function renderTasks() {
+            const vidContainer = document.getElementById('video-tasks-container');
+            const spcContainer = document.getElementById('special-tasks-container');
+            
+            vidContainer.innerHTML = '';
+            spcContainer.innerHTML = '';
+
+            allTasks.forEach(task => {
+                const progress = userDocData.completedTasks[task.id] || 0;
+                const isComplete = progress >= task.limit;
+
+                if (task.type === 'video') {
+                    vidContainer.innerHTML += `
+                        <div onclick="window.handleTask('${task.id}')" class="bg-white rounded-2xl p-4 flex flex-col items-center justify-center shadow-sm border border-gray-100 cursor-pointer ${isComplete ? 'opacity-50 grayscale' : 'active:scale-95 transition-transform'}">
+                            <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white mb-2 shadow-md">
+                                <i class="fa-solid ${task.icon} text-lg"></i>
+                            </div>
+                            <h4 class="font-bold text-gray-800 text-sm text-center mb-1">${task.title}</h4>
+                            <p class="text-xs text-yellow-600 font-bold mb-2">+${task.reward} ৳</p>
+                            <div class="bg-green-600 text-white text-[11px] font-bold px-3 py-1 rounded-full">
+                                ${progress}/${task.limit} সম্পন্ন
+                            </div>
+                        </div>`;
+                } else {
+                    spcContainer.innerHTML += `
+                        <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center justify-between border-l-4 border-l-yellow-400">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-brands ${task.icon} ${task.color} text-3xl w-8 text-center"></i>
+                                <div>
+                                    <h4 class="font-bold text-gray-800 text-sm">${task.title}</h4>
+                                    <p class="text-green-600 font-bold text-xs mt-0.5">+${task.reward} টাকা</p>
+                                </div>
+                            </div>
+                            ${isComplete ? 
+                                `<button disabled class="bg-gray-400 text-white px-5 py-1.5 rounded-full text-sm font-bold">সম্পন্ন</button>` :
+                                `<button onclick="window.handleTask('${task.id}')" class="bg-[#2a303c] text-white px-5 py-1.5 rounded-full text-sm font-bold shadow-md active:scale-95 transition-transform">শুরু</button>`
+                            }
+                        </div>`;
+                }
+            });
+        }
+
+        function renderMilestones() {
+            const container = document.getElementById('milestones-container');
+            const friends = userDocData.referredUsersCount || 0;
+            
+            container.innerHTML = milestonesData.map(m => {
+                const progressText = friends > m.target ? m.target : friends;
+                const isComplete = friends >= m.target;
+                return `
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 border-l-4 border-l-yellow-400">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <h4 class="font-bold text-gray-800">${m.target} জনকে দাওয়াত দিন</h4>
+                            <p class="text-green-600 font-bold text-xs mt-1 flex items-center gap-1">
+                                <i class="fa-solid fa-coins"></i> বোনাস: ${m.reward} টাকা
+                            </p>
+                        </div>
+                        <div class="${isComplete ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'} px-3 py-1 rounded-full text-xs font-bold">
+                            ${progressText}/${m.target}
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                        <div class="${isComplete ? 'bg-green-500' : 'bg-yellow-400'} h-1.5 rounded-full" style="width: ${(progressText/m.target)*100}%"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            if (withdrawalsHistory.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-6 text-sm">কোনো লেনদেন নেই</p>`;
+                return;
+            }
+
+            container.innerHTML = withdrawalsHistory.map(item => {
+                let statusColor = item.status === 'Approved' ? 'bg-green-100 text-green-700' : 
+                                  item.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700';
+                
+                let dateStr = item.timestamp ? new Date(item.timestamp.toMillis()).toLocaleString('bn-BD', {hour12:true, month:'short', day:'numeric'}) : 'Processing...';
+
+                return `
+                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-red-50 text-red-500 flex items-center justify-center">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-gray-800 text-sm">উত্তোলন (${item.method})</p>
+                            <p class="text-xs text-gray-400 mt-0.5">${dateStr}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-bold text-red-500">- ${item.amount.toFixed(2)} ৳</p>
+                        <p class="text-[10px] ${statusColor} px-2 py-0.5 rounded-full inline-block mt-1 font-bold">${item.status}</p>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function fetchAndRenderLeaderboard() {
+            try {
+                const lbRef = collection(db, 'users');
+                const q = query(lbRef, orderBy('balance', 'desc'), limit(20));
+                const snap = await getDocs(q);
+                
+                let topUsers = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                const podium = document.getElementById('podium-container');
+                const list = document.getElementById('leaderboard-list');
+                
+                podium.innerHTML = '';
+                list.innerHTML = '';
+
+                if(topUsers.length === 0) return;
+
+                // Render Top 3 (Podium) Order: 2nd, 1st, 3rd
+                const r1 = topUsers[0];
+                const r2 = topUsers[1];
+                const r3 = topUsers[2];
+
+                if(r2) podium.innerHTML += createPodiumCard(r2, 2, 'text-gray-400', 'border-gray-300', 'w-16 h-16', '-mb-3');
+                if(r1) podium.innerHTML += createPodiumCard(r1, 1, 'text-yellow-400 text-4xl drop-shadow-md', 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]', 'w-24 h-24', '-mb-4 z-10');
+                if(r3) podium.innerHTML += createPodiumCard(r3, 3, 'text-[#cd7f32]', 'border-[#cd7f32]', 'w-16 h-16', '-mb-3');
+
+                // Render remaining users 4-20
+                for(let i = 3; i < topUsers.length; i++) {
+                    let u = topUsers[i];
+                    list.innerHTML += `
+                    <div class="flex justify-between items-center py-3 border-b border-gray-100 last:border-0">
+                        <div class="flex items-center gap-4">
+                            <span class="text-gray-400 font-bold w-5">#${i+1}</span>
+                            <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200">
+                                ${(u.firstName?.[0] || 'U').toUpperCase()}
+                            </div>
+                            <span class="font-bold text-gray-800">${u.firstName}</span>
+                        </div>
+                        <span class="text-green-600 font-bold">${(u.balance || 0).toFixed(2)} ৳</span>
+                    </div>`;
+                }
+
+            } catch (error) {
+                console.error("Leaderboard Error:", error);
+            }
+        }
+
+        function createPodiumCard(user, rank, iconColor, borderColor, imgSize, margin) {
+            return `
+            <div class="flex flex-col items-center mb-4 ${rank===1 ? 'z-10' : ''}">
+                <i class="fa-solid fa-crown ${iconColor} text-2xl ${margin} z-10 relative"></i>
+                <div class="${imgSize} rounded-full bg-white border-4 ${borderColor} flex items-center justify-center text-xl font-bold text-gray-600 shadow-lg relative z-0">
+                    ${(user.firstName?.[0] || 'U').toUpperCase()}
+                </div>
+                <p class="font-bold text-sm text-gray-800 mt-2 truncate w-20 text-center">${user.firstName}</p>
+                <span class="bg-green-600 text-white text-xs px-3 py-1 rounded-full mt-1 font-bold">${(user.balance||0).toFixed(0)} ৳</span>
+            </div>`;
+        }
+
+
+        // --- Exposed Window Functions for HTML OnClick Events ---
+
+        window.showToast = function(msg) {
+            const toast = document.getElementById("toast");
+            toast.innerText = msg;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+            if(window.navigator.vibrate) window.navigator.vibrate(50); // Haptic feedback
+        };
+
+        window.closeNotice = function() {
+            const modal = document.getElementById('notice-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.remove('flex', 'opacity-0');
+                modal.classList.add('hidden');
+            }, 300);
+        };
+
+        window.switchTab = function(targetId, btnElement) {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.view-section').forEach(s => s.classList.add('hidden'));
+            
+            btnElement.classList.add('active');
+            document.getElementById(targetId).classList.remove('hidden');
+            document.getElementById('main-content').scrollTop = 0;
+
+            if(targetId === 'tab-leaderboard') {
+                fetchAndRenderLeaderboard();
+            }
+            if(window.navigator.vibrate) window.navigator.vibrate(30);
+        };
+
+        window.copyReferralLink = function() {
+            const link = `https://t.me/${botUsername}/app?startapp=${tgUser.id}`;
+            navigator.clipboard.writeText(link).then(() => {
+                window.showToast("রেফার লিংক কপি করা হয়েছে!");
+            });
+        };
+
+        window.shareReferralLink = function() {
+            const link = `https://t.me/${botUsername}/app?startapp=${tgUser.id}`;
+            const text = `ঈদ সালামি অ্যাপে জয়েন করুন আর জিতুন ফ্রি সালামি! 🌙\n\nলিংক: ${link}`;
+            tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`);
+        };
+
+        window.handleTask = async function(taskId) {
+            if(isProcessingTask) return;
+            
+            const task = allTasks.find(t => t.id == taskId);
+            if(!task) return;
+
+            const progress = userDocData.completedTasks[taskId] || 0;
+            if(progress >= task.limit) {
+                window.showToast('এই টাস্কটি সম্পন্ন হয়েছে!');
+                return;
+            }
+
+            try {
+                isProcessingTask = true;
+                const userRef = doc(db, 'users', String(tgUser.id));
+                
+                // Firestore exact field update
+                await updateDoc(userRef, {
+                    [`completedTasks.${taskId}`]: increment(1),
+                    balance: increment(task.reward)
+                });
+
+                // Update local state
+                userDocData.completedTasks[taskId] = progress + 1;
+                userDocData.balance += task.reward;
+                
+                updateUI();
+                window.showToast(`সম্পন্ন! +${task.reward} টাকা যুক্ত হয়েছে।`);
+
+            } catch (error) {
+                console.error("Task Update Failed:", error);
+                window.showToast("সমস্যা হয়েছে! আবার চেষ্টা করুন।");
+            } finally {
+                isProcessingTask = false;
+            }
+        };
+
+        window.handleWithdraw = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('withdraw-btn');
+            const method = document.getElementById('withdraw-method').value;
+            const number = document.getElementById('withdraw-number').value;
+            const amount = parseFloat(document.getElementById('withdraw-amount').value);
+
+            if (amount < adminSettings.minimumWithdraw) {
+                window.showToast(`মিনিমাম উত্তোলন ${adminSettings.minimumWithdraw} টাকা!`);
+                return;
+            }
+            if (userDocData.balance < amount) {
+                window.showToast('পর্যাপ্ত ব্যালেন্স নেই!');
+                return;
+            }
+
+            try {
+                btn.disabled = true;
+                btn.innerText = "প্রসেস হচ্ছে...";
+
+                const userRef = doc(db, 'users', String(tgUser.id));
+                
+                // 1. Deduct Balance
+                await updateDoc(userRef, { balance: increment(-amount) });
+                userDocData.balance -= amount;
+
+                // 2. Log Request in DB
+                const withdrawRef = collection(db, 'withdrawals');
+                const newRequest = {
+                    userId: String(tgUser.id),
+                    userName: `${tgUser.first_name || ''} ${tgUser.last_name || ''}`,
+                    method: method,
+                    number: number,
+                    amount: amount,
+                    status: 'Pending',
+                    timestamp: serverTimestamp()
+                };
+                const docRef = await addDoc(withdrawRef, newRequest);
+
+                // Update local history array for immediate UI reflection
+                withdrawalsHistory.unshift({
+                    docId: docRef.id,
+                    ...newRequest,
+                    timestamp: { toMillis: () => Date.now() } // Mock server timestamp for UI
+                });
+
+                document.getElementById('withdraw-form').reset();
+                updateUI();
+                window.showToast('উত্তোলনের রিকোয়েস্ট সফল হয়েছে!');
+
+            } catch (error) {
+                console.error("Withdraw Error:", error);
+                window.showToast('এরর! আবার চেষ্টা করুন।');
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "টাকা উত্তোলনের রিকোয়েস্ট";
+            }
+        };
+
+        // Bootstrap App
+        window.addEventListener('DOMContentLoaded', bootApp);
+
+    </script>
+</body>
+</html>
