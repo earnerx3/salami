@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Premium</title>
+    <title>Shohoj World Premium</title>
     
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     
@@ -11,6 +11,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script src='//libtl.com/sdk.js' data-zone='10487556' data-sdk='show_10487556'></script>
+    
+    <script src="https://ad.gigapub.tech/script?id=5851"></script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -112,6 +114,14 @@
         }
 
         ::-webkit-scrollbar { width: 0px; }
+        
+        /* For 2-line title clamp */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;  
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="h-screen flex justify-center">
@@ -120,8 +130,7 @@
         <div class="loader-img-container mb-6">
             <img src="parrot.gif" class="loader-img" alt="Logo">
         </div>
-        <h2 class="text-slate-800 font-bold text-2xl tracking-wide font-inter">𝐏𝐀𝐑𝐑𝐎𝐓
-টিয়া পাখি 🦜</h2>
+        <h2 class="text-slate-800 font-bold text-2xl tracking-wide font-inter">𝐏𝐀𝐑𝐑𝐎𝐓 🦜</h2>
         <p class="text-emerald-600 text-sm mt-2 font-medium animate-pulse">সার্ভারের সাথে কানেক্ট হচ্ছে...</p>
     </div>
 
@@ -155,7 +164,7 @@
                 </div>
             </div>
             <div class="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-[10px] font-bold border border-emerald-100 flex items-center gap-1.5 shadow-sm">
-                <i class="fa-solid fa-wifi fa-beat-fade"></i> লাইভ
+                <i class="fa-solid fa-wifi fa-beat-fade"></i>Online
             </div>
         </div>
 
@@ -208,7 +217,7 @@
                     <div class="glass p-4 rounded-2xl flex flex-col justify-between h-24 border border-white">
                         <div class="flex items-center gap-2 mb-1">
                             <div class="w-6 h-6 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center"><i class="fa-solid fa-eye text-[10px]"></i></div>
-                            <p class="text-xs text-slate-500 font-bold">অ্যাড দেখা</p>
+                            <p class="text-xs text-slate-500 font-bold">মোট অ্যাড দেখা</p>
                         </div>
                         <h3 class="font-bold text-slate-800 text-xl pl-1 font-inter" id="stat-tasks">0</h3>
                     </div>
@@ -223,7 +232,7 @@
 
                 <div class="glass p-5 rounded-3xl shadow-sm mb-6 flex items-center justify-between border-l-4 border-l-emerald-500">
                     <div>
-                        <p class="text-[10px] text-slate-400 font-bold uppercase mb-1 tracking-wider">আজকের টার্গেট</p>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase mb-1 tracking-wider">আজকের মোট টার্গেট</p>
                         <h2 class="text-3xl font-bold text-slate-800 font-inter"><span id="ads-completed">0</span><span class="text-slate-300 text-xl">/<span id="daily-target-display">0</span></span></h2>
                     </div>
                     <div class="relative w-14 h-14">
@@ -236,33 +245,43 @@
                 </div>
 
                 <div class="grid grid-cols-1 gap-3">
-                    <button id="watch-ad-btn" onclick="watchAd()" class="w-full bg-slate-900 text-white p-4 rounded-2xl shadow-lg btn-press flex items-center justify-between group border border-slate-700 relative overflow-hidden">
+                    <button id="watch-ad-btn-1" onclick="watchAd1()" class="w-full bg-slate-900 text-white p-4 rounded-2xl shadow-lg btn-press flex items-center justify-between group border border-slate-700 relative overflow-hidden">
                         <div class="absolute inset-0 bg-slate-800 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
                         <div class="flex items-center gap-4 relative z-10">
                             <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-emerald-400">
                                 <i class="fa-solid fa-play"></i>
                             </div>
                             <div class="text-left">
-                                <h3 class="font-bold text-sm">Platform 1 (Premium)</h3>
-                                <p class="text-[10px] text-slate-400 font-inter">Reward: ৳ <span id="ad-reward-display">0.00</span></p>
+                                <h3 class="font-bold text-sm">Platform 1 (Monetag)</h3>
+                                <p class="text-[10px] text-slate-400 font-inter">রিওয়ার্ড: ৳ <span id="ad1-reward-display">0.00</span> &bull; ভিউ: <span class="text-emerald-400 font-bold" id="ad1-views">0</span>/<span id="ad1-limit">0</span></p>
                             </div>
                         </div>
                         <i class="fa-solid fa-chevron-right text-slate-500 relative z-10"></i>
                     </button>
 
-                    <button class="w-full bg-white text-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between opacity-70 cursor-not-allowed">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
-                                <i class="fa-solid fa-video"></i>
+                    <button id="watch-ad-btn-2" onclick="watchAd2()" class="w-full bg-slate-900 text-white p-4 rounded-2xl shadow-lg btn-press flex items-center justify-between group border border-slate-700 relative overflow-hidden">
+                        <div class="absolute inset-0 bg-slate-800 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
+                        <div class="flex items-center gap-4 relative z-10">
+                            <div class="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-indigo-400">
+                                <i class="fa-solid fa-bolt"></i>
                             </div>
                             <div class="text-left">
-                                <h3 class="font-bold text-sm text-slate-600">Platform 2 (Video)</h3>
-                                <p class="text-[10px] text-slate-400 font-inter">Coming Soon</p>
+                                <h3 class="font-bold text-sm">Platform 2 (Gigapub)</h3>
+                                <p class="text-[10px] text-slate-400 font-inter">রিওয়ার্ড: ৳ <span id="ad2-reward-display">0.00</span> &bull; ভিউ: <span class="text-indigo-400 font-bold" id="ad2-views">0</span>/<span id="ad2-limit">0</span></p>
                             </div>
                         </div>
-                        <i class="fa-solid fa-lock text-slate-300"></i>
+                        <i class="fa-solid fa-chevron-right text-slate-500 relative z-10"></i>
                     </button>
                 </div>
+
+                <div class="mt-8">
+                    <h3 class="font-bold text-slate-800 text-sm mb-3 pl-1 flex items-center gap-2">
+                        <i class="fa-solid fa-crown text-amber-500"></i> প্রিমিয়াম কন্টেন্ট
+                    </h3>
+                    <div id="locked-content-grid" class="grid grid-cols-2 gap-3 pb-5">
+                        </div>
+                </div>
+
             </div>
 
             <div id="view-tasks" class="p-5 hidden">
@@ -293,7 +312,7 @@
                         <p class="text-xs text-slate-500 mb-5 leading-relaxed">
                             অভিনন্দন! আপনি ১৫টি রেফার সম্পন্ন করেছেন। টাকা তুলতে হলে একাউন্টটি ভেরিফাই করুন।
                         </p>
-                        <a id="verify-btn-link" href="#" target="_blank" class="block w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 btn-press">
+                        <a id="verify-btn-link" href="#" target="_blank" class="block w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 btn-press text-center">
                             এখনই ভেরিফাই করুন
                         </a>
                     </div>
@@ -302,7 +321,7 @@
                 <div id="withdraw-form-view" class="glass rounded-3xl p-5 shadow-sm space-y-4">
                     <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 text-center mb-2">
                         <p class="text-[10px] text-orange-700 font-bold">
-                           <i class="fa-solid fa-info-circle"></i> শর্ত: রেফারের পর টাকা তুলুন
+                           <i class="fa-solid fa-info-circle"></i> শর্ত: রেফার কমপ্লিট করুন 
                         </p>
                         <p class="text-[11px] text-slate-500 mt-1">আপনার বর্তমান রেফার: <span id="current-ref-count" class="font-bold text-slate-800">0</span>/15</p>
                     </div>
@@ -311,16 +330,16 @@
                         <label class="text-[11px] font-bold text-slate-500 mb-2 block">মেথড সিলেক্ট করুন</label>
                         <div class="grid grid-cols-2 gap-3 mb-3">
                             <button onclick="selectGateway(this, 'Nagad')" class="gateway-btn border border-slate-200 rounded-xl p-3 flex flex-col items-center justify-center gap-2 transition bg-white/50 backdrop-blur-sm">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/Nagad_Logo.svg/100px-Nagad_Logo.svg.png" class="h-6 object-contain">
+                                <img src="nagad.png" class="h-6 object-contain">
                                 <span class="text-[10px] font-bold text-slate-600">নগদ</span>
                             </button>
                             <button onclick="selectGateway(this, 'Bkash')" class="gateway-btn border border-slate-200 rounded-xl p-3 flex flex-col items-center justify-center gap-2 transition bg-white/50 backdrop-blur-sm">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Bkash_logo.svg/100px-Bkash_logo.svg.png" class="h-6 object-contain">
+                                <img src="bkash.png" class="h-6 object-contain">
                                 <span class="text-[10px] font-bold text-slate-600">বিকাশ</span>
                             </button>
                         </div>
                         <button onclick="selectGateway(this, 'Rocket')" class="gateway-btn w-full border border-slate-200 rounded-xl p-3 flex items-center justify-center gap-2 transition bg-white/50 backdrop-blur-sm mb-2">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/2/25/Rocket_Mobile_Banking_Logo.png" class="h-6 object-contain">
+                            <img src="rocket.png" class="h-6 object-contain">
                             <span class="text-[10px] font-bold text-slate-600">রকেট</span>
                         </button>
                         <input type="hidden" id="selected-gateway">
@@ -421,31 +440,34 @@
 
     <script>
         // --- 1. CONFIGURATION ---
-        const BOT_USERNAME = "ShohojWorldBot"; 
+        const BOT_USERNAME = "Parrot_Bird_Bot"; 
         const BOT_APP_NAME = "app"; 
         
         const firebaseConfig = {
-            apiKey: "AIzaSyCHLiQWuDMOORQewtqhKUJaC8BQlUfKo7I",
-            authDomain: "bdearnings.firebaseapp.com",
-            projectId: "bdearnings",
-            storageBucket: "bdearnings.firebasestorage.app",
-            messagingSenderId: "547328921031",
-            appId: "1:547328921031:web:3aa8fe0ad1250d82fb1de2",
-            measurementId: "G-189QW2F64M"
+            apiKey: "AIzaSyAr4enOTyCZHw739nm9kNPV0s7i97EOPcU",
+  authDomain: "ed-salami.firebaseapp.com",
+  projectId: "ed-salami",
+  storageBucket: "ed-salami.firebasestorage.app",
+  messagingSenderId: "233356363861",
+  appId: "1:233356363861:web:7d653743bd7ca78f722cdc",
+  measurementId: "G-TBG2S6VYDW"
         };
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const tg = window.Telegram.WebApp;
 
-        // Dynamic Variables fetched from Firebase
         let promoBanners = []; 
         let refMilestones = [];
         let tasksList = [];
+        let lockedContentData = JSON.parse(localStorage.getItem('lockedContentCache')) || [];
         
+        // Added Gigapub default settings
         let appSettings = {
             dailyAdLimit: 50,
+            dailyAdLimitGiga: 30, // Default for Gigapub
             adReward: 0.50,
+            adRewardGiga: 0.60,   // Default for Gigapub
             referralBonus: 2.00,
             minWithdraw: 50,
             helpLink: "https://t.me/YourSupport",
@@ -465,20 +487,18 @@
             tg.setBackgroundColor('#f8fafc');
 
             if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-                 // document.body.innerHTML = "<div class='flex items-center justify-center h-screen font-bold text-slate-500'>দয়া করে টেলিগ্রাম থেকে ওপেন করুন</div>";
-                 // return;
-                 // For testing in browser uncomment below:
-                 currentUser = { id: 123456, first_name: "Test User", username: "Tester", photo_url: "" };
+                 currentUser = { id: 123456, first_name: "Test User", username: "Tester", photo_url: "" }; 
             } else {
                  currentUser = tg.initDataUnsafe.user;
             }
+
+            if (lockedContentData.length > 0) renderLockedContent();
 
             await initApp();
         });
 
         async function initApp() {
             try {
-                // 1. Fetch Settings
                 db.collection('appConfig').doc('settings').onSnapshot((doc) => {
                     if (doc.exists) {
                         appSettings = { ...appSettings, ...doc.data() };
@@ -486,21 +506,33 @@
                     }
                 });
 
-                // 2. Fetch Banners
                 db.collection('banners').onSnapshot(snap => {
                     promoBanners = [];
                     snap.forEach(doc => promoBanners.push({ id: doc.id, ...doc.data() }));
                     initSlider(); 
                 });
 
-                // 3. Fetch Milestones
                 db.collection('milestones').orderBy('target', 'asc').onSnapshot(snap => {
                     refMilestones = [];
                     snap.forEach(doc => refMilestones.push({ id: doc.id, ...doc.data() }));
                     if(userData.id) renderMilestones(userData);
                 });
 
-                // 4. User Data Management
+                db.collection('locked_content').orderBy('createdAt', 'desc').onSnapshot(snap => {
+                    let freshData = [];
+                    snap.forEach(doc => freshData.push({ id: doc.id, ...doc.data() }));
+                    
+                    if(freshData.length > 1) {
+                        const newestItem = freshData.shift(); 
+                        freshData.sort(() => Math.random() - 0.5); 
+                        freshData.unshift(newestItem); 
+                    }
+                    
+                    lockedContentData = freshData;
+                    localStorage.setItem('lockedContentCache', JSON.stringify(lockedContentData));
+                    if (userData.id) renderLockedContent(); 
+                });
+
                 const userRef = db.collection('users').doc(currentUser.id.toString());
                 const userSnap = await userRef.get();
 
@@ -517,11 +549,9 @@
                     }
                 });
 
-                // 5. Load Tasks
                 loadTasks();
                 setupWithdrawalHistory();
 
-                // Hide Loader
                 setTimeout(() => {
                     const loader = document.getElementById('global-loader');
                     loader.style.opacity = '0';
@@ -541,7 +571,6 @@
             }
         }
 
-        // --- NEW: Dynamic Banner Logic ---
         function initSlider() {
             const container = document.getElementById('banner-container');
             const dotsContainer = document.getElementById('banner-dots');
@@ -555,8 +584,6 @@
 
             promoBanners.forEach((b, i) => {
                 const div = document.createElement('div');
-                
-                // Promotion check
                 const isPromo = b.isPromotion === true;
                 const badge = isPromo ? `<span class="absolute top-2 right-2 bg-slate-900/80 text-white text-[9px] px-2 py-0.5 rounded-full font-bold border border-slate-700/50 backdrop-blur-sm z-20">Ad/Promo</span>` : '';
                 const clickLogic = (isPromo && b.link) ? `onclick="tg.openLink('${b.link}')"` : '';
@@ -598,10 +625,12 @@
                 totalIncome: 0.00,
                 joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 dailyAdsWatched: 0,
+                dailyAdsWatchedGiga: 0, // New logic
                 lastAdDate: new Date().toISOString().split('T')[0],
-                completedTasks: [], // For one-time tasks
-                completedDailyTasks: [], // For daily tasks
+                completedTasks: [], 
+                completedDailyTasks: [], 
                 claimedMilestones: [], 
+                unlocked_items: {}, 
                 referredBy: referrerId
             };
 
@@ -632,26 +661,31 @@
             }
         }
 
-        // --- UPDATED: Reset Daily Tasks at Midnight ---
         function checkDailyReset(userRef, data) {
             const today = new Date().toISOString().split('T')[0];
             if (data.lastAdDate !== today) {
                 userRef.update({ 
                     dailyAdsWatched: 0, 
+                    dailyAdsWatchedGiga: 0,
                     lastAdDate: today,
-                    completedDailyTasks: [] // Reset daily tasks!
+                    completedDailyTasks: [] 
                 });
             }
         }
 
         function applyConfig() {
             document.getElementById('welcome-text').innerText = appSettings.noticeText;
-            document.getElementById('daily-target-display').innerText = appSettings.dailyAdLimit;
-            document.getElementById('ad-reward-display').innerText = parseFloat(appSettings.adReward).toFixed(2);
             document.getElementById('min-withdraw-display').innerText = appSettings.minWithdraw;
             document.getElementById('ref-bonus-display').innerText = appSettings.referralBonus;
             document.getElementById('help-link').href = appSettings.helpLink;
             document.getElementById('verify-btn-link').href = appSettings.verifyLink;
+            
+            // Set Individual Limits and Rewards UI
+            document.getElementById('ad1-reward-display').innerText = parseFloat(appSettings.adReward || 0.50).toFixed(2);
+            document.getElementById('ad1-limit').innerText = appSettings.dailyAdLimit || 50;
+            
+            document.getElementById('ad2-reward-display').innerText = parseFloat(appSettings.adRewardGiga || 0.60).toFixed(2);
+            document.getElementById('ad2-limit').innerText = appSettings.dailyAdLimitGiga || 30;
         }
 
         function updateUI(data) {
@@ -666,11 +700,21 @@
             }
 
             document.getElementById('stat-referral').innerText = data.referralCount;
-            document.getElementById('stat-tasks').innerText = data.dailyAdsWatched;
-            document.getElementById('ads-completed').innerText = data.dailyAdsWatched;
             
-            const percentage = Math.min((data.dailyAdsWatched / appSettings.dailyAdLimit) * 100, 100);
+            // Total Progress Logic
+            let totalWatched = (data.dailyAdsWatched || 0) + (data.dailyAdsWatchedGiga || 0);
+            let totalLimit = parseInt(appSettings.dailyAdLimit || 50) + parseInt(appSettings.dailyAdLimitGiga || 30);
+            
+            document.getElementById('stat-tasks').innerText = totalWatched;
+            document.getElementById('ads-completed').innerText = totalWatched;
+            document.getElementById('daily-target-display').innerText = totalLimit;
+            
+            const percentage = Math.min((totalWatched / totalLimit) * 100, 100);
             document.getElementById('circle-progress').style.strokeDasharray = `${percentage}, 100`;
+
+            // Individual Card Progress Update
+            document.getElementById('ad1-views').innerText = data.dailyAdsWatched || 0;
+            document.getElementById('ad2-views').innerText = data.dailyAdsWatchedGiga || 0;
 
             document.getElementById('withdraw-balance').innerText = balanceTxt;
             document.getElementById('current-ref-count').innerText = data.referralCount;
@@ -690,7 +734,121 @@
             document.getElementById('ref-link').innerText = link;
             
             renderTasks();
-            renderMilestones(data); 
+            renderMilestones(data);
+            renderLockedContent(); 
+        }
+
+        function renderLockedContent() {
+            const container = document.getElementById('locked-content-grid');
+            if(!container) return;
+            container.innerHTML = '';
+
+            if (lockedContentData.length === 0) {
+                container.innerHTML = `<div class="col-span-2 text-center text-xs text-slate-400 py-6 glass rounded-2xl">নতুন কোনো কন্টেন্ট নেই</div>`;
+                return;
+            }
+
+            lockedContentData.forEach(item => {
+                const progress = (userData.unlocked_items && userData.unlocked_items[item.id]) || 0;
+                const required = item.required_ads || 2; 
+                const isUnlocked = progress >= required;
+
+                const btnHtml = isUnlocked 
+                    ? `<button onclick="tg.openLink('${item.target_url}')" class="w-full mt-2.5 bg-emerald-500 text-white text-[11px] py-2 rounded-xl font-bold shadow-md shadow-emerald-500/30 flex items-center justify-center gap-1.5 btn-press transition-all"><i class="fa-solid fa-play"></i> Watch Now</button>`
+                    : `<button onclick="processUnlockAd('${item.id}', ${required})" class="w-full mt-2.5 bg-slate-900 text-white text-[11px] py-2 rounded-xl font-bold shadow-md flex items-center justify-center gap-1.5 btn-press transition-all" id="unlock-btn-${item.id}"><i class="fa-solid fa-lock text-[10px]"></i> Unlock (${progress}/${required})</button>`;
+
+                // Thumbnail without lock icon
+                const html = `
+                    <div class="glass bg-white rounded-[1.2rem] p-2.5 border border-slate-100 shadow-sm flex flex-col h-full relative overflow-hidden">
+                        <div class="w-full aspect-video bg-slate-100 rounded-lg mb-2.5 overflow-hidden relative shadow-inner">
+                            <img src="${item.thumbnail}" class="w-full h-full object-cover">
+                        </div>
+                        <div class="flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-[12px] leading-tight line-clamp-2 mb-1.5">${item.title}</h3>
+                                <p class="text-[9px] text-slate-400 font-medium tracking-wide">Click Unlock Button And Watch 😉</p>
+                            </div>
+                            ${btnHtml}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        async function processUnlockAd(itemId, requiredAds) {
+            const limit = appSettings.dailyAdLimit || 50;
+            const watched = userData.dailyAdsWatched || 0;
+            
+            if (watched >= limit) {
+                showToast("আজকের অ্যাড লিমিট শেষ!", "error");
+                return;
+            }
+
+            const btn = document.getElementById(`unlock-btn-${itemId}`);
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            let adStartTime = Date.now();
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-[10px]"></i> Running...`;
+
+            try {
+                if (typeof show_10487556 === 'function') {
+                    await show_10487556();
+                } else {
+                    showToast("অ্যাড লোড হচ্ছে, অপেক্ষা করুন...", "info");
+                    await new Promise(r => setTimeout(r, 15000));
+                }
+                
+                // Anti-Cheat Check for Unlocking
+                const watchTime = Date.now() - adStartTime;
+                if (watchTime < 12000) {
+                    showToast("ওয়ার্নিং: ফুল অ্যাড (১২ সেকেন্ড) না দেখলে আনলক হবে না!", "error");
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    return;
+                }
+                
+                finalizeUnlockProgress(itemId, requiredAds, btn, originalHtml);
+            } catch (e) {
+                showToast("অ্যাড সম্পূর্ণ হয়নি", "error");
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        async function finalizeUnlockProgress(itemId, requiredAds, btn, originalHtml) {
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> Checking...`;
+            
+            try {
+                await db.runTransaction(async (t) => {
+                    const uRef = db.collection('users').doc(currentUser.id.toString());
+                    const uDoc = await t.get(uRef);
+                    const data = uDoc.data();
+                    
+                    if (data.dailyAdsWatched >= appSettings.dailyAdLimit) throw "Limit Reached";
+                    
+                    let unlockedItems = data.unlocked_items || {};
+                    let currentProgress = unlockedItems[itemId] || 0;
+                    
+                    if (currentProgress < requiredAds) {
+                        unlockedItems[itemId] = currentProgress + 1;
+                        const reward = parseFloat(appSettings.adReward || 0.50);
+                        
+                        t.update(uRef, {
+                            unlocked_items: unlockedItems,
+                            balance: data.balance + reward, 
+                            totalIncome: data.totalIncome + reward,
+                            dailyAdsWatched: data.dailyAdsWatched + 1,
+                            lastAdDate: new Date().toISOString().split('T')[0]
+                        });
+                    }
+                });
+                showToast(`সফল! +৳ ${appSettings.adReward || 0.50} যোগ হয়েছে`, "success");
+            } catch (error) {
+                showToast(error === "Limit Reached" ? "লিমিট শেষ" : "দুঃখিত, সমস্যা হয়েছে", "error");
+            } finally {
+                btn.disabled = false;
+            }
         }
 
         function renderMilestones(data) {
@@ -756,43 +914,89 @@
             }
         }
 
-        // --- Ad System ---
-        function watchAd() {
-            if (userData.dailyAdsWatched >= appSettings.dailyAdLimit) {
-                showToast("আজকের লিমিট শেষ!", "error");
+        // ====== WATCH AD PLATFORM 1 (MONETAG) ======
+        async function watchAd1() {
+            const btn = document.getElementById('watch-ad-btn-1');
+            const limit = appSettings.dailyAdLimit || 50;
+            const watched = userData.dailyAdsWatched || 0;
+            
+            if (watched >= limit) return showToast("আজকের লিমিট শেষ!", "error");
+            
+            const serverAdLink = appSettings.adLink; 
+            if(serverAdLink && serverAdLink.length > 5) {
+                tg.openLink(serverAdLink);
                 return;
             }
 
-            const btn = document.getElementById('watch-ad-btn');
-            const serverAdLink = appSettings.adLink; 
-
-            if(serverAdLink && serverAdLink.length > 5) {
-                tg.openLink(serverAdLink);
-            } else {
-                if (typeof show_10487556 === 'function') {
-                    show_10487556().then(() => console.log('Ad shown'));
-                } else {
-                     showToast("অ্যাড লোড হচ্ছে, অপেক্ষা করুন...", "info");
-                }
-            }
-
-            const originalContent = btn.innerHTML;
-            let timeLeft = 10;
             btn.disabled = true;
-            
-            const timer = setInterval(() => {
-                btn.innerHTML = `<div class="flex items-center justify-center w-full"><span class="font-inter text-slate-400 text-sm font-bold">অপেক্ষা করুন... ${timeLeft}s</span></div>`;
-                timeLeft--;
-                
-                if(timeLeft < 0) {
-                    clearInterval(timer);
-                    completeAdReward(btn, originalContent);
+            let adStartTime = Date.now();
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<div class="flex items-center justify-center w-full py-2.5"><div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div></div>`;
+
+            try {
+                if (typeof show_10487556 === 'function') {
+                    await show_10487556(); 
+                } else {
+                    showToast("অ্যাড লোড হচ্ছে...", "info");
+                    await new Promise(r => setTimeout(r, 15000));
                 }
-            }, 1000);
+
+                const watchTime = Date.now() - adStartTime;
+                if (watchTime < 12000) {
+                    showToast("ওয়ার্নিং: ফুল অ্যাড (১২ সেকেন্ড) না দেখলে রিওয়ার্ড পাবেন না!", "error");
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    return;
+                }
+
+                await completeAdReward('monetag', btn, originalContent);
+            } catch (e) {
+                showToast("অ্যাড দেখা সম্পূর্ণ হয়নি!", "error");
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
         }
 
-        async function completeAdReward(btn, originalContent) {
-            btn.innerHTML = `<div class="flex items-center justify-center w-full"><div class="w-5 h-5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div></div>`;
+        // ====== WATCH AD PLATFORM 2 (GIGAPUB) ======
+        async function watchAd2() {
+            const btn = document.getElementById('watch-ad-btn-2');
+            const limit = appSettings.dailyAdLimitGiga || 30;
+            const watched = userData.dailyAdsWatchedGiga || 0;
+            
+            if (watched >= limit) return showToast("আজকের লিমিট শেষ!", "error");
+            
+            btn.disabled = true;
+            let adStartTime = Date.now();
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<div class="flex items-center justify-center w-full py-2.5"><div class="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>`;
+
+            try {
+                if (typeof window.showGiga === 'function') {
+                    await window.showGiga();
+                } else {
+                    showToast("অ্যাড লোড হচ্ছে...", "info");
+                    await new Promise(r => setTimeout(r, 15000));
+                }
+
+                const watchTime = Date.now() - adStartTime;
+                if (watchTime < 12000) {
+                    showToast("ওয়ার্নিং: ফুল অ্যাড (১২ সেকেন্ড) না দেখলে রিওয়ার্ড পাবেন না!", "error");
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    return;
+                }
+
+                await completeAdReward('gigapub', btn, originalContent);
+            } catch (e) {
+                showToast("অ্যাড দেখা সম্পূর্ণ হয়নি!", "error");
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        }
+
+        // ====== UNIVERSAL REWARD GIVER ======
+        async function completeAdReward(platform, btn, originalContent) {
+            btn.innerHTML = `<div class="flex items-center justify-center w-full py-2.5"><div class="w-5 h-5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div></div>`;
             
             try {
                 await db.runTransaction(async (t) => {
@@ -800,17 +1004,26 @@
                     const uDoc = await t.get(uRef);
                     const data = uDoc.data();
                     
-                    if (data.dailyAdsWatched >= appSettings.dailyAdLimit) throw "Limit Reached";
+                    let limit = platform === 'monetag' ? (appSettings.dailyAdLimit || 50) : (appSettings.dailyAdLimitGiga || 30);
+                    let watchedField = platform === 'monetag' ? 'dailyAdsWatched' : 'dailyAdsWatchedGiga';
+                    let watched = data[watchedField] || 0;
                     
-                    const reward = parseFloat(appSettings.adReward);
-                    t.update(uRef, {
+                    if (watched >= limit) throw "Limit Reached";
+                    
+                    const reward = platform === 'monetag' ? parseFloat(appSettings.adReward || 0.50) : parseFloat(appSettings.adRewardGiga || 0.60);
+                    
+                    let updateData = {
                         balance: data.balance + reward,
-                        dailyAdsWatched: data.dailyAdsWatched + 1,
-                        totalIncome: data.totalIncome + reward,
+                        totalIncome: (data.totalIncome || 0) + reward,
                         lastAdDate: new Date().toISOString().split('T')[0]
-                    });
+                    };
+                    updateData[watchedField] = watched + 1;
+
+                    t.update(uRef, updateData);
                 });
-                showToast(`অভিনন্দন! +৳ ${appSettings.adReward}`, "success");
+                
+                const rewardAmt = platform === 'monetag' ? (appSettings.adReward || 0.50) : (appSettings.adRewardGiga || 0.60);
+                showToast(`অভিনন্দন! +৳ ${rewardAmt}`, "success");
             } catch (e) {
                 showToast(e === "Limit Reached" ? "আজকের মত শেষ" : "ব্যালেন্স যোগ হয়নি", "error");
             } finally {
@@ -819,7 +1032,6 @@
             }
         }
 
-        // --- UPDATED: Smart Tasks System ---
         function loadTasks() {
             db.collection('tasks').onSnapshot(snap => {
                 tasksList = [];
@@ -838,19 +1050,17 @@
             let completedTasks = [];
 
             tasksList.forEach(task => {
-                // Date Check (Admin can schedule tasks)
-                if (task.startDate && task.startDate > todayStr) return; // Future task, don't show
+                if (task.startDate && task.startDate > todayStr) return; 
 
                 const isOneTimeDone = userData.completedTasks && userData.completedTasks.includes(task.id);
                 const isDailyDone = userData.completedDailyTasks && userData.completedDailyTasks.includes(task.id);
                 
-                // If it's a one-time task and done, skip showing entirely (Disappears forever)
                 if(task.type !== 'daily' && isOneTimeDone) return;
 
                 if (isDailyDone || isOneTimeDone) {
-                    completedTasks.push(task); // Goes to bottom
+                    completedTasks.push(task); 
                 } else {
-                    pendingTasks.push(task); // Goes to top
+                    pendingTasks.push(task); 
                 }
             });
 
@@ -926,7 +1136,6 @@
             }, 5000);
         }
 
-        // --- Withdrawal System ---
         function selectGateway(btn, method) {
             document.querySelectorAll('.gateway-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
@@ -1026,7 +1235,6 @@
               });
         }
 
-        // --- Utility Functions ---
         function switchTab(tabId) {
             document.querySelectorAll('[id^="view-"]').forEach(el => el.classList.add('hidden'));
             document.getElementById(`view-${tabId}`).classList.remove('hidden');
