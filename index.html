@@ -30,7 +30,6 @@
             overflow: hidden;
         }
         
-        /* Premium Glass Effect */
         .glass {
             background: var(--glass-bg);
             backdrop-filter: blur(16px);
@@ -38,7 +37,6 @@
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         }
 
-        /* Loading Animation */
         .loader-img-container {
             width: 90px;
             height: 90px;
@@ -75,7 +73,6 @@
             100% { transform: scale(1.5); opacity: 0; }
         }
 
-        /* Gold Shimmer Effect for Cards */
         .gold-card {
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
             position: relative;
@@ -114,7 +111,6 @@
             box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
         }
 
-        /* Custom Scrollbar for hidden scroll effect */
         ::-webkit-scrollbar { width: 0px; }
     </style>
 </head>
@@ -238,13 +234,6 @@
                     </div>
                 </div>
 
-                <div class="bg-amber-50 border border-amber-100 p-3 rounded-xl mb-5 text-center">
-                    <p class="text-[11px] text-amber-700 font-bold leading-tight">
-                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> 
-                        অ্যাড সম্পূর্ণ লোড হতে দিন এবং ১০ সেকেন্ড অপেক্ষা করুন।
-                    </p>
-                </div>
-
                 <div class="grid grid-cols-1 gap-3">
                     <button id="watch-ad-btn" onclick="watchAd()" class="w-full bg-slate-900 text-white p-4 rounded-2xl shadow-lg btn-press flex items-center justify-between group border border-slate-700 relative overflow-hidden">
                         <div class="absolute inset-0 bg-slate-800 transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></div>
@@ -267,19 +256,6 @@
                             </div>
                             <div class="text-left">
                                 <h3 class="font-bold text-sm text-slate-600">Platform 2 (Video)</h3>
-                                <p class="text-[10px] text-slate-400 font-inter">Coming Soon</p>
-                            </div>
-                        </div>
-                        <i class="fa-solid fa-lock text-slate-300"></i>
-                    </button>
-
-                    <button class="w-full bg-white text-slate-800 p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between opacity-70 cursor-not-allowed">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400">
-                                <i class="fa-solid fa-bullhorn"></i>
-                            </div>
-                            <div class="text-left">
-                                <h3 class="font-bold text-sm text-slate-600">Platform 3 (Offers)</h3>
                                 <p class="text-[10px] text-slate-400 font-inter">Coming Soon</p>
                             </div>
                         </div>
@@ -447,7 +423,6 @@
         const BOT_USERNAME = "ShohojWorldBot"; 
         const BOT_APP_NAME = "app"; 
         
-        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCHLiQWuDMOORQewtqhKUJaC8BQlUfKo7I",
             authDomain: "bdearnings.firebaseapp.com",
@@ -458,24 +433,15 @@
             measurementId: "G-189QW2F64M"
         };
 
-        // --- NEW: Referral Milestones Config ---
-        const refMilestones = [
-            { id: 'm20', target: 20, reward: 50 },
-            { id: 'm30', target: 30, reward: 100 },
-            { id: 'm50', target: 50, reward: 250 }
-        ];
-
-        // --- NEW: Banner Slider Data (Can be fetched from DB later) ---
-        const promoBanners = [
-            { img: 'https://i.ibb.co.com/Tqh3cbNj/IMG-20260219-115127-537.jpg', link: 'https://t.me/yourchannel' },
-            { img: 'https://placehold.co/600x300/1e293b/ffffff?text=Premium+Ad+Space', link: 'https://t.me/another' },
-            { img: 'https://placehold.co/600x300/10b981/ffffff?text=Refer+%26+Earn', link: 'https://t.me/ShohojWorldBot' }
-        ];
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const tg = window.Telegram.WebApp;
 
+        // Dynamic Variables fetched from Firebase
+        let promoBanners = []; 
+        let refMilestones = [];
+        let tasksList = [];
+        
         let appSettings = {
             dailyAdLimit: 50,
             adReward: 0.50,
@@ -483,13 +449,13 @@
             minWithdraw: 50,
             helpLink: "https://t.me/YourSupport",
             verifyLink: "https://t.me/YourVerifyBot",
-            noticeText: "আমাদের অ্যাপে আপনাকে স্বাগতম! বেশি বেশি রেফার করুন আর আয় করুন।",
+            noticeText: "আমাদের অ্যাপে আপনাকে স্বাগতম!",
             adLink: ""
         };
 
         let currentUser = null;
         let userData = {};
-        let tasksList = [];
+        let bannerInterval = null;
 
         document.addEventListener('DOMContentLoaded', async () => {
             tg.ready();
@@ -498,46 +464,20 @@
             tg.setBackgroundColor('#f8fafc');
 
             if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
-                 document.body.innerHTML = "<div class='flex items-center justify-center h-screen font-bold text-slate-500'>দয়া করে টেলিগ্রাম থেকে ওপেন করুন</div>";
-                 return;
+                 // document.body.innerHTML = "<div class='flex items-center justify-center h-screen font-bold text-slate-500'>দয়া করে টেলিগ্রাম থেকে ওপেন করুন</div>";
+                 // return;
+                 // For testing in browser uncomment below:
+                 currentUser = { id: 123456, first_name: "Test User", username: "Tester", photo_url: "" };
+            } else {
+                 currentUser = tg.initDataUnsafe.user;
             }
 
-            currentUser = tg.initDataUnsafe.user;
-            initSlider(); // Initialize Banner Slider
             await initApp();
         });
 
-        // --- NEW: Banner Slider Logic ---
-        function initSlider() {
-            const container = document.getElementById('banner-container');
-            const dotsContainer = document.getElementById('banner-dots');
-            if(!container) return;
-
-            promoBanners.forEach((b, i) => {
-                const div = document.createElement('div');
-                div.className = 'w-full h-full flex-shrink-0 relative cursor-pointer';
-                div.onclick = () => tg.openLink(b.link);
-                div.innerHTML = `<img src="${b.img}" class="w-full h-full object-cover">`;
-                container.appendChild(div);
-
-                const dot = document.createElement('div');
-                dot.className = `w-1.5 h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === 0 ? 'bg-white w-4' : 'bg-white/50'}`;
-                dotsContainer.appendChild(dot);
-            });
-
-            let currentIdx = 0;
-            setInterval(() => {
-                currentIdx = (currentIdx + 1) % promoBanners.length;
-                container.style.transform = `translateX(-${currentIdx * 100}%)`;
-                
-                Array.from(dotsContainer.children).forEach((dot, i) => {
-                    dot.className = `w-1.5 h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === currentIdx ? 'bg-white w-4' : 'bg-white/50'}`;
-                });
-            }, 3500);
-        }
-
         async function initApp() {
             try {
+                // 1. Fetch Settings
                 db.collection('appConfig').doc('settings').onSnapshot((doc) => {
                     if (doc.exists) {
                         appSettings = { ...appSettings, ...doc.data() };
@@ -545,6 +485,21 @@
                     }
                 });
 
+                // 2. Fetch Banners
+                db.collection('banners').onSnapshot(snap => {
+                    promoBanners = [];
+                    snap.forEach(doc => promoBanners.push({ id: doc.id, ...doc.data() }));
+                    initSlider(); 
+                });
+
+                // 3. Fetch Milestones
+                db.collection('milestones').orderBy('target', 'asc').onSnapshot(snap => {
+                    refMilestones = [];
+                    snap.forEach(doc => refMilestones.push({ id: doc.id, ...doc.data() }));
+                    if(userData.id) renderMilestones(userData);
+                });
+
+                // 4. User Data Management
                 const userRef = db.collection('users').doc(currentUser.id.toString());
                 const userSnap = await userRef.get();
 
@@ -561,9 +516,11 @@
                     }
                 });
 
+                // 5. Load Tasks
                 loadTasks();
                 setupWithdrawalHistory();
 
+                // Hide Loader
                 setTimeout(() => {
                     const loader = document.getElementById('global-loader');
                     loader.style.opacity = '0';
@@ -583,8 +540,52 @@
             }
         }
 
+        // --- NEW: Dynamic Banner Logic ---
+        function initSlider() {
+            const container = document.getElementById('banner-container');
+            const dotsContainer = document.getElementById('banner-dots');
+            if(!container) return;
+
+            container.innerHTML = '';
+            dotsContainer.innerHTML = '';
+            if(bannerInterval) clearInterval(bannerInterval);
+
+            if(promoBanners.length === 0) return;
+
+            promoBanners.forEach((b, i) => {
+                const div = document.createElement('div');
+                
+                // Promotion check
+                const isPromo = b.isPromotion === true;
+                const badge = isPromo ? `<span class="absolute top-2 right-2 bg-slate-900/80 text-white text-[9px] px-2 py-0.5 rounded-full font-bold border border-slate-700/50 backdrop-blur-sm z-20">Ad/Promo</span>` : '';
+                const clickLogic = (isPromo && b.link) ? `onclick="tg.openLink('${b.link}')"` : '';
+                const cursor = (isPromo && b.link) ? 'cursor-pointer' : '';
+
+                div.className = `w-full h-full flex-shrink-0 relative ${cursor}`;
+                div.innerHTML = `
+                    ${badge}
+                    <img src="${b.img}" class="w-full h-full object-cover relative z-10" ${clickLogic}>
+                `;
+                container.appendChild(div);
+
+                const dot = document.createElement('div');
+                dot.className = `w-1.5 h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === 0 ? 'bg-white w-4' : 'bg-white/50'}`;
+                dotsContainer.appendChild(dot);
+            });
+
+            let currentIdx = 0;
+            bannerInterval = setInterval(() => {
+                currentIdx = (currentIdx + 1) % promoBanners.length;
+                container.style.transform = `translateX(-${currentIdx * 100}%)`;
+                
+                Array.from(dotsContainer.children).forEach((dot, i) => {
+                    dot.className = `w-1.5 h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === currentIdx ? 'bg-white w-4' : 'bg-white/50'}`;
+                });
+            }, 3500);
+        }
+
         async function createNewUser(userRef) {
-            const startParam = tg.initDataUnsafe.start_param || "";
+            const startParam = tg.initDataUnsafe?.start_param || "";
             let referrerId = null;
             if (startParam && startParam.startsWith('ref_')) referrerId = startParam.split('_')[1];
 
@@ -597,8 +598,9 @@
                 joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 dailyAdsWatched: 0,
                 lastAdDate: new Date().toISOString().split('T')[0],
-                completedTasks: [],
-                claimedMilestones: [], // Added for new feature
+                completedTasks: [], // For one-time tasks
+                completedDailyTasks: [], // For daily tasks
+                claimedMilestones: [], 
                 referredBy: referrerId
             };
 
@@ -629,10 +631,15 @@
             }
         }
 
+        // --- UPDATED: Reset Daily Tasks at Midnight ---
         function checkDailyReset(userRef, data) {
             const today = new Date().toISOString().split('T')[0];
             if (data.lastAdDate !== today) {
-                userRef.update({ dailyAdsWatched: 0, lastAdDate: today });
+                userRef.update({ 
+                    dailyAdsWatched: 0, 
+                    lastAdDate: today,
+                    completedDailyTasks: [] // Reset daily tasks!
+                });
             }
         }
 
@@ -682,10 +689,9 @@
             document.getElementById('ref-link').innerText = link;
             
             renderTasks();
-            renderMilestones(data); // Render the new milestone section
+            renderMilestones(data); 
         }
 
-        // --- NEW: Render Milestone Progress ---
         function renderMilestones(data) {
             const container = document.getElementById('milestone-container');
             const claimed = data.claimedMilestones || [];
@@ -726,7 +732,6 @@
             `;
         }
 
-        // --- NEW: Claim Milestone Logic ---
         async function claimMilestone(mId, reward) {
             showToast("যাচাই করা হচ্ছে...", "info");
             try {
@@ -813,7 +818,7 @@
             }
         }
 
-        // --- Tasks System ---
+        // --- UPDATED: Smart Tasks System ---
         function loadTasks() {
             db.collection('tasks').onSnapshot(snap => {
                 tasksList = [];
@@ -827,26 +832,59 @@
             if(!container) return;
             container.innerHTML = '';
             
-            if(tasksList.length === 0) {
-                container.innerHTML = '<p class="text-center text-xs text-slate-400 mt-4">কোনো টাস্ক নেই</p>';
+            const todayStr = new Date().toISOString().split('T')[0];
+            let pendingTasks = [];
+            let completedTasks = [];
+
+            tasksList.forEach(task => {
+                // Date Check (Admin can schedule tasks)
+                if (task.startDate && task.startDate > todayStr) return; // Future task, don't show
+
+                const isOneTimeDone = userData.completedTasks && userData.completedTasks.includes(task.id);
+                const isDailyDone = userData.completedDailyTasks && userData.completedDailyTasks.includes(task.id);
+                
+                // If it's a one-time task and done, skip showing entirely (Disappears forever)
+                if(task.type !== 'daily' && isOneTimeDone) return;
+
+                if (isDailyDone || isOneTimeDone) {
+                    completedTasks.push(task); // Goes to bottom
+                } else {
+                    pendingTasks.push(task); // Goes to top
+                }
+            });
+
+            const sortedTasks = [...pendingTasks, ...completedTasks];
+
+            if(sortedTasks.length === 0) {
+                container.innerHTML = '<p class="text-center text-xs text-slate-400 mt-4">নতুন কোনো টাস্ক নেই</p>';
                 return;
             }
 
-            tasksList.forEach(task => {
-                const isCompleted = userData.completedTasks && userData.completedTasks.includes(task.id);
+            sortedTasks.forEach(task => {
+                const isOneTimeDone = userData.completedTasks && userData.completedTasks.includes(task.id);
+                const isDailyDone = userData.completedDailyTasks && userData.completedDailyTasks.includes(task.id);
+                const isCompleted = isOneTimeDone || isDailyDone;
+                
+                const taskTypeBadge = task.type === 'daily' 
+                    ? `<span class="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-bold border border-blue-100">প্রতিদিনের কাজ</span>`
+                    : '';
+
                 const div = document.createElement('div');
-                div.className = `glass bg-white p-3.5 rounded-2xl flex items-center justify-between transition border border-slate-100 shadow-sm ${isCompleted ? 'opacity-60 grayscale' : 'active:scale-95'}`;
+                div.className = `glass bg-white p-3.5 rounded-2xl flex items-center justify-between transition border border-slate-100 shadow-sm ${isCompleted ? 'opacity-60 grayscale order-last' : 'active:scale-95'}`;
                 
                 const btnState = isCompleted 
                     ? `<span class="text-emerald-600 font-bold text-[11px] flex items-center gap-1"><i class="fa-solid fa-check-circle"></i> সম্পন্ন</span>` 
-                    : `<button onclick="doTask('${task.id}', '${task.link}', ${task.reward})" class="bg-slate-900 text-white text-[10px] px-4 py-2 rounded-lg font-bold shadow-md">শুরু করুন</button>`;
+                    : `<button onclick="doTask('${task.id}', '${task.link}', ${task.reward}, '${task.type}')" class="bg-slate-900 text-white text-[10px] px-4 py-2 rounded-lg font-bold shadow-md">শুরু করুন</button>`;
 
                 div.innerHTML = `
                     <div class="flex items-center gap-3">
                         <img src="${task.img || 'https://cdn-icons-png.flaticon.com/512/2098/2098402.png'}" class="w-10 h-10 rounded-xl object-cover bg-slate-50 border border-slate-200 p-0.5">
                         <div>
-                            <h4 class="font-bold text-slate-800 text-[13px] line-clamp-1">${task.title}</h4>
-                            <p class="text-[11px] text-emerald-600 font-bold font-inter mt-0.5">+ ৳ ${parseFloat(task.reward).toFixed(2)}</p>
+                            <div class="flex items-center gap-2 mb-0.5">
+                                <h4 class="font-bold text-slate-800 text-[13px] line-clamp-1">${task.title}</h4>
+                                ${taskTypeBadge}
+                            </div>
+                            <p class="text-[11px] text-emerald-600 font-bold font-inter">+ ৳ ${parseFloat(task.reward).toFixed(2)}</p>
                         </div>
                     </div>
                     <div>${btnState}</div>
@@ -855,7 +893,7 @@
             });
         }
 
-        function doTask(taskId, link, reward) {
+        function doTask(taskId, link, reward, taskType) {
             tg.openLink(link);
             showToast("যাচাই করা হচ্ছে...", "info");
             setTimeout(async () => {
@@ -865,13 +903,20 @@
                         const uDoc = await t.get(uRef);
                         const uData = uDoc.data();
 
-                        if (uData.completedTasks && uData.completedTasks.includes(taskId)) throw "Already completed";
-
-                        t.update(uRef, {
+                        let updateData = {
                             balance: uData.balance + parseFloat(reward),
-                            totalIncome: uData.totalIncome + parseFloat(reward),
-                            completedTasks: [...(uData.completedTasks || []), taskId]
-                        });
+                            totalIncome: uData.totalIncome + parseFloat(reward)
+                        };
+
+                        if (taskType === 'daily') {
+                            if (uData.completedDailyTasks && uData.completedDailyTasks.includes(taskId)) throw "Already completed today";
+                            updateData.completedDailyTasks = [...(uData.completedDailyTasks || []), taskId];
+                        } else {
+                            if (uData.completedTasks && uData.completedTasks.includes(taskId)) throw "Already completed";
+                            updateData.completedTasks = [...(uData.completedTasks || []), taskId];
+                        }
+
+                        t.update(uRef, updateData);
                     });
                     showToast(`টাস্ক সম্পন্ন! +৳ ${reward}`, "success");
                 } catch (e) {
