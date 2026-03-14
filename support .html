@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Support - Shohoj World Premium</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #10b981; 
+            --glass-bg: rgba(255, 255, 255, 0.85);
+        }
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            color: #1e293b;
+        }
+        
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-press:active { transform: scale(0.96); }
+        
+        .category-btn.selected {
+            background-color: #ecfdf5;
+            border-color: #10b981;
+            color: #059669;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+
+        ::-webkit-scrollbar { width: 0px; }
+    </style>
+</head>
+<body class="h-screen flex justify-center">
+
+    <div class="w-full max-w-md h-full bg-[#f8fafc] relative shadow-2xl flex flex-col overflow-hidden" id="app-container">
+        
+        <div class="glass px-5 py-4 flex items-center justify-between z-20 sticky top-0 w-full rounded-b-2xl">
+            <button onclick="window.history.back()" class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 btn-press">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h1 class="font-bold text-slate-800 text-lg tracking-tight">সাপোর্ট সেন্টার</h1>
+            <div class="w-10"></div> </div>
+
+        <div class="flex-1 overflow-y-auto p-5 pb-10 scroll-smooth">
+            
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-3 text-blue-500 shadow-inner border border-blue-100">
+                    <i class="fa-solid fa-headset text-2xl"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-800">আপনার সমস্যা জানান</h2>
+                <p class="text-xs text-slate-500 mt-1">আমরা দ্রুত আপনার সমস্যার সমাধান করবো</p>
+            </div>
+
+            <div class="glass rounded-3xl p-5 shadow-sm space-y-5">
+                
+                <div>
+                    <label class="text-[12px] font-bold text-slate-600 mb-2 block">সমস্যার ধরন সিলেক্ট করুন *</label>
+                    <div class="grid grid-cols-2 gap-3" id="category-container">
+                        <button onclick="selectCategory(this, 'টাকা উইথড্র সমস্যা')" class="category-btn bg-white border border-slate-200 rounded-xl py-2.5 px-2 text-[11px] font-bold text-slate-600 transition flex flex-col items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-money-bill-transfer text-lg"></i> উইথড্র সমস্যা
+                        </button>
+                        <button onclick="selectCategory(this, 'টাস্ক/কাজ সমস্যা')" class="category-btn bg-white border border-slate-200 rounded-xl py-2.5 px-2 text-[11px] font-bold text-slate-600 transition flex flex-col items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-list-check text-lg"></i> কাজের সমস্যা
+                        </button>
+                        <button onclick="selectCategory(this, 'রেফার সমস্যা')" class="category-btn bg-white border border-slate-200 rounded-xl py-2.5 px-2 text-[11px] font-bold text-slate-600 transition flex flex-col items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-users text-lg"></i> রেফার সমস্যা
+                        </button>
+                        <button onclick="selectCategory(this, 'অন্যান্য সমস্যা')" class="category-btn bg-white border border-slate-200 rounded-xl py-2.5 px-2 text-[11px] font-bold text-slate-600 transition flex flex-col items-center gap-1.5 shadow-sm">
+                            <i class="fa-solid fa-circle-question text-lg"></i> অন্যান্য
+                        </button>
+                    </div>
+                    <input type="hidden" id="selected-category" value="">
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">টেলিগ্রাম ইউজারনেম (অপশনাল)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3.5 text-slate-400 text-sm"><i class="fa-brands fa-telegram"></i></span>
+                            <input type="text" id="tg-username" placeholder="@username" class="w-full bg-white border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-sm font-inter">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">টেলিগ্রাম ইউজার আইডি</label>
+                        <input type="number" id="tg-id" placeholder="123456789" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-emerald-500 transition shadow-sm font-inter text-slate-500" readonly>
+                        <p class="text-[9px] text-slate-400 mt-1 pl-1">এটি স্বয়ংক্রিয়ভাবে পূরণ হবে</p>
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">আপনার ফোন নাম্বার *</label>
+                        <input type="tel" id="user-phone" placeholder="01xxxxxxxxx" class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-sm font-inter">
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">সমস্যার বিস্তারিত লিখুন *</label>
+                        <textarea id="issue-details" rows="4" placeholder="আপনার সমস্যাটি এখানে সুন্দরভাবে বুঝিয়ে লিখুন..." class="w-full bg-white border border-slate-200 rounded-xl py-3 px-4 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition shadow-sm resize-none"></textarea>
+                    </div>
+                </div>
+                
+                <button id="submit-btn" onclick="submitTicket()" class="w-full bg-slate-900 text-white font-bold py-4 rounded-xl shadow-lg shadow-slate-900/20 btn-press mt-2 flex items-center justify-center gap-2">
+                    <span>সাবমিট করুন</span> <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="success-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm hidden px-5 transition-opacity duration-300">
+        <div class="bg-white rounded-[2rem] max-w-sm w-full p-8 shadow-2xl text-center transform scale-95 transition-transform duration-300" id="success-card">
+            <div class="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-5 shadow-inner">
+                <i class="fa-solid fa-check text-4xl text-emerald-500"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">সফলভাবে পাঠানো হয়েছে!</h3>
+            <p class="text-slate-500 text-sm mb-6 leading-relaxed">
+                আপনার সমস্যাটি আমাদের সাপোর্ট টিমের কাছে পৌঁছেছে। আমরা দ্রুত চেক করে সমাধান করে দেবো।
+            </p>
+            <button onclick="closeSuccessModal()" class="w-full bg-emerald-500 text-white font-bold py-3.5 rounded-xl btn-press shadow-lg shadow-emerald-500/30">
+                ঠিক আছে
+            </button>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed top-[-60px] left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-5 py-3.5 rounded-full shadow-2xl transition-all duration-400 z-[60] flex items-center gap-3 min-w-[220px] justify-center border border-slate-700">
+        <i id="toast-icon" class="fa-solid fa-circle-exclamation text-red-400 text-lg"></i>
+        <span id="toast-msg" class="font-bold text-sm tracking-wide">তথ্য পূরণ করুন</span>
+    </div>
+
+    <script>
+        // ==========================================
+        // 🚨 YOUR TELEGRAM BOT CONFIGURATION HERE 🚨
+        // ==========================================
+        const BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"; 
+        const ADMIN_CHAT_ID = "YOUR_ADMIN_CHAT_ID_HERE"; 
+        
+        const tg = window.Telegram.WebApp;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            tg.ready();
+            tg.expand();
+
+            // Auto-fill Telegram data if opened inside Telegram
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                document.getElementById('tg-id').value = user.id;
+                if(user.username) {
+                    document.getElementById('tg-username').value = "@" + user.username;
+                }
+            }
+        });
+
+        function selectCategory(btn, categoryName) {
+            // Remove selection from all buttons
+            document.querySelectorAll('.category-btn').forEach(b => {
+                b.classList.remove('selected');
+                // reset icon color
+                b.querySelector('i').classList.remove('text-emerald-500');
+            });
+            
+            // Add selection to clicked button
+            btn.classList.add('selected');
+            btn.querySelector('i').classList.add('text-emerald-500');
+            
+            // Set hidden input value
+            document.getElementById('selected-category').value = categoryName;
+        }
+
+        async function submitTicket() {
+            const category = document.getElementById('selected-category').value;
+            const tgId = document.getElementById('tg-id').value || "Not Found";
+            const username = document.getElementById('tg-username').value || "No Username";
+            const phone = document.getElementById('user-phone').value;
+            const details = document.getElementById('issue-details').value;
+
+            // Basic Validation
+            if (!category) return showToast("দয়া করে সমস্যার ধরন সিলেক্ট করুন!", "error");
+            if (!phone) return showToast("আপনার ফোন নাম্বার দিন!", "error");
+            if (!details) return showToast("সমস্যার বিস্তারিত লিখুন!", "error");
+
+            const btn = document.getElementById('submit-btn');
+            const originalBtnHtml = btn.innerHTML;
+            
+            // Loading State
+            btn.disabled = true;
+            btn.innerHTML = `<div class="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> <span class="ml-2">পাঠানো হচ্ছে...</span>`;
+
+            // Formatted Message for Telegram
+            const textMessage = `
+🚨 *New Support Ticket* 🚨
+
+🗂 *Category:* ${category}
+👤 *User ID:* \`${tgId}\`
+📛 *Username:* ${username}
+📱 *Phone:* ${phone}
+
+📝 *Problem Details:*
+${details}
+            `;
+
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: ADMIN_CHAT_ID,
+                        text: textMessage,
+                        parse_mode: 'Markdown'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    showSuccessModal();
+                    // Clear form
+                    document.getElementById('user-phone').value = "";
+                    document.getElementById('issue-details').value = "";
+                    document.querySelectorAll('.category-btn').forEach(b => {
+                        b.classList.remove('selected');
+                        b.querySelector('i').classList.remove('text-emerald-500');
+                    });
+                    document.getElementById('selected-category').value = "";
+                } else {
+                    showToast("পাঠাতে সমস্যা হয়েছে। বট টোকেন চেক করুন।", "error");
+                }
+            } catch (error) {
+                showToast("ইন্টারনেট কানেকশন চেক করুন!", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
+            }
+        }
+
+        function showSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            const card = document.getElementById('success-card');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                card.classList.remove('scale-95');
+                card.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeSuccessModal() {
+            const modal = document.getElementById('success-modal');
+            const card = document.getElementById('success-card');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            const i = document.getElementById('toast-icon');
+            
+            i.className = type === 'error' ? 'fa-solid fa-circle-exclamation text-red-400 text-lg' : 'fa-solid fa-check-circle text-emerald-400 text-lg';
+            
+            t.style.top = '30px';
+            setTimeout(() => t.style.top = '-80px', 3000);
+        }
+    </script>
+</body>
+</html>

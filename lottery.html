@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Mega Lottery</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;600;700&family=VT323&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.85);
+        }
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            color: #f8fafc;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        /* --- THE TV & BULB ANIMATIONS --- */
+        .tv-container {
+            position: relative;
+            border-radius: 1.5rem;
+            padding: 8px;
+            background: #0f172a;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+            z-index: 10;
+        }
+        
+        .tv-screen {
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            border: 4px solid #334155;
+            border-radius: 1rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Scanning line effect for the TV */
+        .tv-screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* Glowing Bulbs Border */
+        .bulbs-wrapper {
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: 1.8rem;
+            z-index: -1;
+            background: linear-gradient(45deg, #ff0000, #ff7300, #fffb00, #48ff00, #00ffd5, #002bff, #7a00ff, #ff00c8, #ff0000);
+            background-size: 400%;
+            animation: glowing-border 20s linear infinite;
+        }
+
+        @keyframes glowing-border {
+            0% { background-position: 0 0; }
+            50% { background-position: 400% 0; }
+            100% { background-position: 0 0; }
+        }
+
+        /* Ticket Styles */
+        .ticket-card {
+            background: linear-gradient(135deg, #cbd5e1 0%, #f8fafc 100%);
+            color: #0f172a;
+            clip-path: polygon(10% 0, 90% 0, 100% 10%, 100% 90%, 90% 100%, 10% 100%, 0 90%, 0 10%);
+            position: relative;
+            transition: transform 0.2s;
+        }
+        .ticket-card.sold {
+            background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+            color: #94a3b8;
+            opacity: 0.9;
+        }
+        .ticket-card.my-ticket {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+        
+        .digital-font { font-family: 'VT323', monospace; }
+        ::-webkit-scrollbar { width: 0px; }
+        .btn-press:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="h-screen flex justify-center">
+
+    <div class="w-full max-w-md h-full relative flex flex-col overflow-hidden" id="app-container">
+        
+        <div class="glass px-5 py-3.5 flex items-center justify-between z-30 sticky top-0 w-full rounded-b-2xl border-b border-white/10">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-500 p-0.5">
+                    <img id="user-avatar" src="https://placehold.co/100" class="w-full h-full rounded-full object-cover border border-slate-900">
+                </div>
+                <div>
+                    <h1 class="font-bold text-white text-sm" id="header-username">লোড হচ্ছে...</h1>
+                    <p class="text-[12px] text-emerald-400 font-bold font-inter">৳ <span id="header-balance">0.00</span></p>
+                </div>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] text-slate-400 uppercase tracking-wide">আমার টিকেট</p>
+                <p class="text-sm font-bold text-amber-400 font-inter"><span id="my-tickets-count">0</span>/10</p>
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 pb-20 scroll-smooth">
+            
+            <div class="tv-container mt-2 mb-8">
+                <div class="bulbs-wrapper opacity-80"></div>
+                
+                <div class="tv-screen h-52 p-4 flex flex-col justify-between" id="tv-content">
+                    
+                    <div class="flex justify-between items-start z-10 relative">
+                        <div class="bg-red-500/20 text-red-400 border border-red-500/50 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase animate-pulse flex items-center gap-1.5">
+                            <div class="w-1.5 h-1.5 bg-red-500 rounded-full"></div> LIVE
+                        </div>
+                        
+                        <div id="prev-winner-box" class="hidden bg-slate-900/80 border border-slate-700 rounded-lg p-1.5 flex items-center gap-2 backdrop-blur-sm max-w-[130px]">
+                            <img id="prev-winner-img" src="" class="w-6 h-6 rounded border border-amber-400">
+                            <div>
+                                <p class="text-[8px] text-slate-400 leading-none">গত ড্রয়ের বিজয়ী</p>
+                                <p class="text-[10px] font-bold text-white truncate w-16" id="prev-winner-name">Name</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center z-10 relative flex-1 flex flex-col justify-center" id="tv-center-info">
+                        <h2 class="text-amber-400 text-xs font-bold tracking-widest mb-1 uppercase">মোট প্রাইস মানি (Live)</h2>
+                        <h1 class="text-4xl font-bold text-white font-inter tracking-tight mb-2 drop-shadow-lg">৳ <span id="live-pool">0</span></h1>
+                        <div class="digital-font text-emerald-400 text-3xl tracking-widest mt-1" id="countdown-timer">00:00:00</div>
+                    </div>
+
+                    <div class="hidden text-center z-20 absolute inset-0 bg-slate-900/95 backdrop-blur-md flex flex-col justify-center items-center" id="tv-winner-screen">
+                        <h2 class="text-emerald-400 text-xl font-bold mb-3 animate-bounce"><i class="fa-solid fa-crown text-amber-400"></i> ড্র সম্পন্ন হয়েছে!</h2>
+                        <img id="winner-avatar" src="" class="w-16 h-16 rounded-full border-2 border-amber-400 mb-2 shadow-[0_0_15px_rgba(251,191,36,0.5)]">
+                        <p class="text-xs text-slate-300">বিজয়ী টিকেট: <span id="winner-ticket-no" class="font-bold text-white">#000</span></p>
+                        <h3 class="text-lg font-bold text-white mt-1 mb-1" id="winner-name-display">Name</h3>
+                        <div class="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm font-bold border border-amber-500/50">
+                            পুরস্কার: ৳ <span id="winner-prize">0</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="flex justify-between items-end mb-4 px-1">
+                <div>
+                    <h3 class="font-bold text-white text-lg">মেগা টিকেট সমূহ</h3>
+                    <p class="text-xs text-slate-400">প্রতি টিকেটের মূল্য: ৳ <span id="ticket-price">10</span></p>
+                </div>
+                <div class="text-right">
+                    <span class="text-[10px] bg-slate-800 text-emerald-400 px-2 py-1 rounded border border-slate-700">বিক্রি হয়েছে: <span id="sold-count" class="font-bold">0</span>/100</span>
+                </div>
+            </div>
+
+            <div id="tickets-grid" class="grid grid-cols-4 gap-2.5 pb-10">
+                </div>
+
+        </div>
+    </div>
+
+    <div id="toast" class="fixed top-[-60px] left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-full shadow-2xl transition-all duration-400 z-50 flex items-center gap-3 border border-slate-600">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-blue-400 text-lg"></i>
+        <span id="toast-msg" class="font-bold text-sm">Message</span>
+    </div>
+
+    <script>
+        // --- 1. FIREBASE SETUP ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAr4enOTyCZHw739nm9kNPV0s7i97EOPcU",
+            authDomain: "ed-salami.firebaseapp.com",
+            projectId: "ed-salami",
+            storageBucket: "ed-salami.firebasestorage.app",
+            messagingSenderId: "233356363861",
+            appId: "1:233356363861:web:7d653743bd7ca78f722cdc"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const tg = window.Telegram.WebApp;
+
+        // --- 2. GLOBAL VARIABLES ---
+        let currentUser = null;
+        let userData = {};
+        let currentRound = null;
+        let activeTickets = {}; // All sold tickets in current round
+        let countdownInterval;
+        
+        // Settings
+        const MAX_TICKETS = 100;
+        const TICKET_PRICE = 10;
+        const USER_TICKET_LIMIT = 10;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            tg.ready(); tg.expand(); tg.setHeaderColor('#0f172a');
+
+            if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+                 currentUser = { id: 123456, first_name: "Nahid", username: "nahid_dev", photo_url: "" }; 
+            } else {
+                 currentUser = tg.initDataUnsafe.user;
+            }
+
+            if(currentUser.photo_url) document.getElementById('user-avatar').src = currentUser.photo_url;
+            
+            generateTicketGrid(); // Draw empty grid first
+            await initLotterySystem();
+        });
+
+        // Generate 100 empty HTML slots
+        function generateTicketGrid() {
+            const grid = document.getElementById('tickets-grid');
+            grid.innerHTML = '';
+            for(let i = 1; i <= MAX_TICKETS; i++) {
+                const tNum = i.toString().padStart(3, '0'); // 001, 002...
+                const div = document.createElement('div');
+                div.id = `ticket-slot-${tNum}`;
+                // Default empty state
+                div.innerHTML = `
+                    <div class="ticket-card p-2 rounded flex flex-col items-center justify-center min-h-[70px] shadow-sm cursor-pointer btn-press" onclick="buyTicket('${tNum}')">
+                        <p class="text-[10px] font-bold text-slate-500 mb-1">#${tNum}</p>
+                        <i class="fa-solid fa-ticket text-slate-300 text-xl"></i>
+                    </div>`;
+                grid.appendChild(div);
+            }
+        }
+
+        // --- 3. CORE LOGIC ---
+        // This listens to the user and the currently active lottery round
+        async function initLotterySystem() {
+            // Listen to User data for balance
+            db.collection('users').doc(currentUser.id.toString()).onSnapshot(doc => {
+                if(doc.exists) {
+                    userData = doc.data();
+                    document.getElementById('header-balance').innerText = parseFloat(userData.balance || 0).toFixed(2);
+                    document.getElementById('header-username').innerText = userData.username || currentUser.first_name;
+                }
+            });
+
+            // "The live broadcast": Listen to the active round document
+            db.collection('lottery_settings').doc('active_round').onSnapshot(doc => {
+                if(doc.exists) {
+                    currentRound = doc.data();
+                    updateTVBroadcast(currentRound);
+                    
+                    // If round is active, listen to tickets being bought in real-time!
+                    if(currentRound.status === 'active') {
+                        listenToTickets(currentRound.roundId);
+                    }
+                } else {
+                    // Admin has not created a round yet. 
+                    console.log("No active round found.");
+                }
+            });
+        }
+
+        // Live updating the TV and checking timer
+        function updateTVBroadcast(round) {
+            document.getElementById('live-pool').innerText = round.totalPool || 0;
+            document.getElementById('ticket-price').innerText = round.ticketPrice || TICKET_PRICE;
+
+            // Show Previous Winner if exists
+            if(round.prevWinner && round.prevWinner.name) {
+                document.getElementById('prev-winner-box').classList.remove('hidden');
+                document.getElementById('prev-winner-name').innerText = round.prevWinner.name;
+                document.getElementById('prev-winner-img').src = round.prevWinner.photo || 'https://placehold.co/100';
+            } else {
+                document.getElementById('prev-winner-box').classList.add('hidden');
+            }
+
+            if(round.status === 'completed') {
+                showWinnerScreen(round.winner);
+                return;
+            } else {
+                document.getElementById('tv-winner-screen').classList.add('hidden');
+            }
+
+            // Countdown Logic
+            if(countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(() => {
+                const now = new Date().getTime();
+                const endTime = round.endTime.toDate().getTime();
+                const distance = endTime - now;
+
+                if (distance < 0) {
+                    clearInterval(countdownInterval);
+                    document.getElementById('countdown-timer').innerText = "DRAWING...";
+                    triggerDrawLogic(round); // Execute Draw!
+                    return;
+                }
+
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                document.getElementById('countdown-timer').innerText = 
+                    `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // Fetch and show tickets live on the grid
+        function listenToTickets(roundId) {
+            db.collection('lottery_rounds').doc(roundId).collection('tickets').onSnapshot(snap => {
+                let myTickets = 0;
+                let soldTickets = 0;
+                
+                snap.forEach(doc => {
+                    const ticket = doc.data();
+                    const tNum = ticket.ticketNumber;
+                    soldTickets++;
+                    
+                    if(ticket.ownerId === currentUser.id.toString()) myTickets++;
+
+                    // Update UI Slot
+                    const slot = document.getElementById(`ticket-slot-${tNum}`);
+                    if(slot && !slot.classList.contains('processed')) {
+                        slot.classList.add('processed');
+                        const isMine = ticket.ownerId === currentUser.id.toString();
+                        
+                        slot.innerHTML = `
+                            <div class="ticket-card p-1.5 rounded flex flex-col items-center justify-center min-h-[70px] ${isMine ? 'my-ticket' : 'sold'} shadow-sm relative overflow-hidden">
+                                <p class="text-[9px] font-bold mb-1 opacity-80 z-10">#${tNum}</p>
+                                <img src="${ticket.ownerPhoto || 'https://placehold.co/100'}" class="w-7 h-7 rounded-full border border-white/20 z-10 shadow-sm object-cover">
+                                <p class="text-[8px] font-bold mt-1 truncate w-full text-center z-10">${ticket.ownerName.split(' ')[0]}</p>
+                                ${isMine ? '<i class="fa-solid fa-star absolute right-1 bottom-1 text-[8px] text-amber-300 z-10 opacity-50"></i>' : ''}
+                            </div>
+                        `;
+                    }
+                });
+
+                document.getElementById('my-tickets-count').innerText = myTickets;
+                document.getElementById('sold-count').innerText = soldTickets;
+                
+                // Store active data for validation
+                activeTickets = { myCount: myTickets, totalSold: soldTickets };
+            });
+        }
+
+        // --- 4. BUYING A TICKET ---
+        /* This is the cool part! When the user clicks an empty slot,
+           we run a Transaction to ensure no one else buys the exact same ticket 
+           at the exact same millisecond. 
+        */
+        async function buyTicket(tNum) {
+            if(!currentRound || currentRound.status !== 'active') return showToast("বর্তমানে কোনো ড্র চলছে না", "error");
+            if(activeTickets.myCount >= USER_TICKET_LIMIT) return showToast(`আপনি সর্বোচ্চ ${USER_TICKET_LIMIT} টিকেট কিনতে পারবেন`, "error");
+            if(userData.balance < TICKET_PRICE) return showToast("পর্যাপ্ত ব্যালেন্স নেই!", "error");
+
+            showToast("যাচাই করা হচ্ছে...", "info");
+
+            const roundId = currentRound.roundId;
+            const userRef = db.collection('users').doc(currentUser.id.toString());
+            const ticketRef = db.collection('lottery_rounds').doc(roundId).collection('tickets').doc(tNum);
+            const activeRoundRef = db.collection('lottery_settings').doc('active_round');
+
+            try {
+                await db.runTransaction(async (t) => {
+                    // Check if ticket is already bought
+                    const ticketDoc = await t.get(ticketRef);
+                    if (ticketDoc.exists) throw "Already Sold";
+
+                    // Check balance again securely
+                    const uDoc = await t.get(userRef);
+                    if(uDoc.data().balance < TICKET_PRICE) throw "Low Balance";
+
+                    // Update Balance
+                    t.update(userRef, { balance: uDoc.data().balance - TICKET_PRICE });
+
+                    // Create Ticket
+                    t.set(ticketRef, {
+                        ticketNumber: tNum,
+                        ownerId: currentUser.id.toString(),
+                        ownerName: currentUser.username || currentUser.first_name,
+                        ownerPhoto: currentUser.photo_url || "",
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+
+                    // Update Live Pool
+                    t.update(activeRoundRef, {
+                        totalPool: firebase.firestore.FieldValue.increment(TICKET_PRICE)
+                    });
+                });
+
+                showToast(`টিকেট #${tNum} সফলভাবে কেনা হয়েছে!`, "success");
+            } catch (error) {
+                if(error === "Already Sold") showToast("দুঃখিত! এই টিকেটটি বিক্রি হয়ে গেছে।", "error");
+                else if(error === "Low Balance") showToast("ব্যালেন্স কম!", "error");
+                else showToast("সমস্যা হয়েছে, আবার চেষ্টা করুন", "error");
+                console.error(error);
+            }
+        }
+
+        // --- 5. AUTOMATIC DRAW LOGIC ---
+        /*
+           When the countdown ends, the first user's device that triggers this 
+           will execute the draw. Transactions ensure it only happens exactly once!
+        */
+        async function triggerDrawLogic(round) {
+            if(round.status !== 'active') return;
+
+            const activeRoundRef = db.collection('lottery_settings').doc('active_round');
+            const ticketsRef = db.collection('lottery_rounds').doc(round.roundId).collection('tickets');
+            
+            try {
+                // Fetch all sold tickets
+                const snapshot = await ticketsRef.get();
+                if(snapshot.empty) {
+                    // No tickets sold, just end the round
+                    await activeRoundRef.update({ status: 'completed' });
+                    return;
+                }
+
+                const ticketsList = [];
+                snapshot.forEach(doc => ticketsList.push(doc.data()));
+
+                // Randomly select a winner!
+                const randomIndex = Math.floor(Math.random() * ticketsList.length);
+                const winnerTicket = ticketsList[randomIndex];
+                const prizeAmount = round.totalPool;
+
+                // Run a transaction to finalize the draw safely
+                await db.runTransaction(async (t) => {
+                    const currentData = await t.get(activeRoundRef);
+                    // Prevent double-draws if another user's phone already did it
+                    if(currentData.data().status !== 'active') throw "Already Drawn";
+
+                    // 1. Mark round as completed & save winner info
+                    t.update(activeRoundRef, {
+                        status: 'completed',
+                        winner: {
+                            ticketNo: winnerTicket.ticketNumber,
+                            name: winnerTicket.ownerName,
+                            photo: winnerTicket.ownerPhoto,
+                            prize: prizeAmount,
+                            userId: winnerTicket.ownerId
+                        }
+                    });
+
+                    // 2. Add prize money to the winner's balance
+                    const winnerRef = db.collection('users').doc(winnerTicket.ownerId);
+                    const wDoc = await t.get(winnerRef);
+                    if(wDoc.exists) {
+                        t.update(winnerRef, {
+                            balance: wDoc.data().balance + prizeAmount
+                        });
+                    }
+                });
+
+            } catch (error) {
+                console.log("Draw process info: ", error); // Usually "Already Drawn"
+            }
+        }
+
+        // --- 6. CELEBRATION ---
+        function showWinnerScreen(winner) {
+            document.getElementById('tv-winner-screen').classList.remove('hidden');
+            document.getElementById('winner-avatar').src = winner.photo || 'https://placehold.co/100';
+            document.getElementById('winner-name-display').innerText = winner.name;
+            document.getElementById('winner-ticket-no').innerText = `#${winner.ticketNo}`;
+            document.getElementById('winner-prize').innerText = winner.prize;
+            
+            triggerConfetti();
+        }
+
+        function triggerConfetti() {
+            var duration = 5 * 1000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#fbbf24', '#34d399', '#f8fafc'] });
+                confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#fbbf24', '#34d399', '#f8fafc'] });
+
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            const i = document.getElementById('toast-icon');
+            
+            i.className = type === 'error' ? 'fa-solid fa-circle-exclamation text-red-400 text-lg' :
+                          type === 'info' ? 'fa-solid fa-circle-info text-blue-400 text-lg' :
+                          'fa-solid fa-circle-check text-emerald-400 text-lg';
+            
+            t.style.top = '25px';
+            setTimeout(() => t.style.top = '-80px', 3000);
+        }
+    </script>
+</body>
+</html>

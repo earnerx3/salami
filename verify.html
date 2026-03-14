@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Account Verification & Withdrawal</title>
+    
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #10b981; 
+            --glass-bg: rgba(255, 255, 255, 0.85);
+        }
+        body {
+            font-family: 'Hind Siliguri', 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            color: #1e293b;
+        }
+        
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-press:active { transform: scale(0.96); transition: transform 0.1s; }
+
+        .gateway-btn.selected {
+            border-color: #10b981;
+            background-color: #ecfdf5;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+        }
+
+        .amount-btn.selected {
+            background-color: #1e293b;
+            color: white;
+            border-color: #1e293b;
+        }
+
+        .amount-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background-color: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar { width: 0px; }
+        
+        /* Floating animation for success */
+        @keyframes float-up {
+            0% { transform: translateY(20px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .animate-float {
+            animation: float-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex justify-center">
+
+    <div class="w-full max-w-md min-h-screen relative shadow-2xl flex flex-col" id="app-container">
+        
+        <div class="glass px-5 py-3.5 flex items-center justify-between z-20 sticky top-0 w-full rounded-b-2xl">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-full bg-gradient-to-tr from-emerald-400 to-cyan-500 p-0.5 shadow-md">
+                    <img id="user-avatar" src="https://placehold.co/100" class="w-full h-full rounded-full object-cover border-2 border-white">
+                </div>
+                <div>
+                    <h1 class="font-bold text-slate-800 text-sm tracking-tight" id="header-username">লোড হচ্ছে...</h1>
+                    <p class="text-[13px] text-emerald-600 font-extrabold font-inter">৳ <span id="header-balance">0.00</span></p>
+                </div>
+            </div>
+            <div class="bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-full text-[10px] font-bold border border-emerald-100 flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-shield-check"></i> Verification
+            </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 pb-10" id="main-content">
+
+            <div id="loading-state" class="text-center py-20">
+                <div class="w-10 h-10 border-4 border-slate-200 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-sm font-bold text-slate-500">ডাটা যাচাই করা হচ্ছে...</p>
+            </div>
+
+            <div id="error-state" class="hidden text-center py-10 animate-float">
+                <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-lock text-3xl text-red-400"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-800 mb-2">ভেরিফিকেশন লকড</h2>
+                <p class="text-sm text-slate-500 mb-4 px-4">উইথড্র অপশন আনলক করতে আপনার আরও <span id="refs-needed" class="font-bold text-red-500">0</span> টি রেফার প্রয়োজন।</p>
+            </div>
+
+            <div id="success-state" class="hidden animate-float space-y-6">
+                
+                <div class="glass bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-3xl p-6 text-center shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-400 rounded-full opacity-10 blur-2xl"></div>
+                    <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-emerald-50 text-emerald-500">
+                        <i class="fa-solid fa-award text-3xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-800 mb-1">অভিনন্দন, <span id="congrats-name">ইউজার</span>! 🎉</h2>
+                    <p class="text-xs text-slate-600 font-medium">আপনার <span id="target-refs-display">0</span>টি রেফার সম্পন্ন হয়েছে। আপনার একাউন্ট এখন ভেরিফাইড এবং উইথড্র করার জন্য প্রস্তুত।</p>
+                </div>
+
+                <div class="glass rounded-3xl p-5 shadow-sm space-y-5 border border-slate-100">
+                    <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-2"><i class="fa-solid fa-money-bill-transfer text-emerald-500 mr-2"></i> উইথড্র রিকোয়েস্ট</h3>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-2 block">পেমেন্ট মেথড সিলেক্ট করুন</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="selectMethod(this, 'Bkash')" class="gateway-btn border border-slate-200 rounded-xl p-2.5 flex flex-col items-center gap-1.5 transition bg-white/50">
+                                <img src="bkash.png" alt="bKash" class="h-6 object-contain" onerror="this.src='https://i.ibb.co/L5Qx8h9/bkash.png'">
+                                <span class="text-[10px] font-bold text-slate-600">বিকাশ</span>
+                            </button>
+                            <button onclick="selectMethod(this, 'Nagad')" class="gateway-btn border border-slate-200 rounded-xl p-2.5 flex flex-col items-center gap-1.5 transition bg-white/50">
+                                <img src="nagad.png" alt="Nagad" class="h-6 object-contain" onerror="this.src='https://i.ibb.co/3Wf2P8y/nagad.png'">
+                                <span class="text-[10px] font-bold text-slate-600">নগদ</span>
+                            </button>
+                            <button onclick="selectMethod(this, 'Rocket')" class="gateway-btn border border-slate-200 rounded-xl p-2.5 flex flex-col items-center gap-1.5 transition bg-white/50">
+                                <img src="rocket.png" alt="Rocket" class="h-6 object-contain" onerror="this.src='https://i.ibb.co/Sccx1bY/rocket.png'">
+                                <span class="text-[10px] font-bold text-slate-600">রকেট</span>
+                            </button>
+                        </div>
+                        <input type="hidden" id="selected-method" value="">
+                    </div>
+
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-2 flex justify-between">
+                            <span>এমাউন্ট সিলেক্ট করুন</span>
+                            <span class="text-emerald-500">মিনিমাম: ৳ <span id="min-limit-display">50</span></span>
+                        </label>
+                        <div class="grid grid-cols-4 gap-2 mb-3" id="amount-presets">
+                            </div>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-slate-400 text-sm font-bold">৳</span>
+                            <input type="number" id="custom-amount" placeholder="অথবা কাস্টম এমাউন্ট লিখুন" class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-emerald-500 transition font-bold text-slate-800 font-inter shadow-sm" oninput="clearPresetSelection()">
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">ওয়ালেট নাম্বার (পার্সোনাল)</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-3 text-slate-400"><i class="fa-solid fa-phone"></i></span>
+                                <input type="tel" id="wallet-number" placeholder="01xxxxxxxxx" class="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-sm focus:outline-none focus:border-emerald-500 transition font-inter shadow-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">টেলিগ্রাম ইউজারনেম</label>
+                            <div class="relative">
+                                <span class="absolute left-3.5 top-3 text-slate-400"><i class="fa-brands fa-telegram"></i></span>
+                                <input type="text" id="tg-username" placeholder="@username" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-sm font-inter shadow-sm text-slate-500" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="submitWithdrawal()" id="submit-btn" class="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-slate-900/20 btn-press mt-2 flex justify-center items-center gap-2 tracking-wide">
+                        রিকুয়েস্ট সাবমিট করুন <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+
+                <div class="mt-8 pb-4">
+                    <h3 class="font-bold text-slate-700 text-sm mb-3 pl-1 flex items-center justify-between">
+                        <span>আপনার রিকুয়েস্ট সমূহ</span>
+                        <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+                    </h3>
+                    <div id="history-container" class="space-y-2">
+                        </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast" class="fixed top-[-60px] left-1/2 transform -translate-x-1/2 bg-slate-900 text-white px-5 py-3.5 rounded-full shadow-2xl transition-all duration-400 z-50 flex items-center gap-3 min-w-[220px] justify-center border border-slate-700">
+        <i id="toast-icon" class="fa-solid fa-check-circle text-emerald-400 text-lg"></i>
+        <span id="toast-msg" class="font-bold text-sm tracking-wide">সফল হয়েছে</span>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAr4enOTyCZHw739nm9kNPV0s7i97EOPcU",
+            authDomain: "ed-salami.firebaseapp.com",
+            projectId: "ed-salami",
+            storageBucket: "ed-salami.firebasestorage.app",
+            messagingSenderId: "233356363861",
+            appId: "1:233356363861:web:7d653743bd7ca78f722cdc",
+            measurementId: "G-TBG2S6VYDW"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const tg = window.Telegram.WebApp;
+
+        let currentUser = null;
+        let userData = {};
+        let appSettings = {
+            requiredReferralsForWithdraw: 15, // Default admin setting
+            minWithdraw: 50,
+            presetAmounts: [50, 100, 200, 500]
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            tg.ready();
+            tg.expand();
+            tg.setHeaderColor('#ffffff');
+            
+            if (!tg.initDataUnsafe || !tg.initDataUnsafe.user) {
+                 currentUser = { id: 123456, first_name: "Test User", username: "Tester", photo_url: "" }; 
+            } else {
+                 currentUser = tg.initDataUnsafe.user;
+            }
+
+            document.getElementById('tg-username').value = currentUser.username ? `@${currentUser.username}` : currentUser.first_name;
+            if(currentUser.photo_url) document.getElementById('user-avatar').src = currentUser.photo_url;
+
+            await initializeData();
+        });
+
+        async function initializeData() {
+            try {
+                // Get Admin Settings First
+                const settingsDoc = await db.collection('appConfig').doc('settings').get();
+                if (settingsDoc.exists) {
+                    appSettings = { ...appSettings, ...settingsDoc.data() };
+                }
+
+                // Get User Data
+                db.collection('users').doc(currentUser.id.toString()).onSnapshot((doc) => {
+                    if (doc.exists) {
+                        userData = doc.data();
+                        updateHeaderUI();
+                        checkEligibility();
+                    } else {
+                        showToast("একাউন্ট খুঁজে পাওয়া যায়নি", "error");
+                    }
+                });
+
+                // Load History
+                loadHistory();
+
+            } catch (error) {
+                console.error(error);
+                showToast("সার্ভার কানেকশন এরর", "error");
+            }
+        }
+
+        function updateHeaderUI() {
+            document.getElementById('header-balance').innerText = parseFloat(userData.balance || 0).toFixed(2);
+            document.getElementById('header-username').innerText = userData.username || currentUser.first_name;
+            document.getElementById('congrats-name').innerText = userData.username || currentUser.first_name;
+            document.getElementById('target-refs-display').innerText = appSettings.requiredReferralsForWithdraw;
+            document.getElementById('min-limit-display').innerText = appSettings.minWithdraw;
+        }
+
+        function checkEligibility() {
+            document.getElementById('loading-state').classList.add('hidden');
+            
+            const currentRefs = userData.referralCount || 0;
+            const targetRefs = appSettings.requiredReferralsForWithdraw || 15;
+
+            if (currentRefs >= targetRefs) {
+                document.getElementById('error-state').classList.add('hidden');
+                
+                // Only trigger confetti once per session when UI is first shown
+                if(document.getElementById('success-state').classList.contains('hidden')){
+                    document.getElementById('success-state').classList.remove('hidden');
+                    triggerConfetti();
+                    generatePresetButtons();
+                } else {
+                    // Just update buttons if balance changes
+                    generatePresetButtons();
+                }
+            } else {
+                document.getElementById('success-state').classList.add('hidden');
+                document.getElementById('error-state').classList.remove('hidden');
+                document.getElementById('refs-needed').innerText = targetRefs - currentRefs;
+            }
+        }
+
+        function triggerConfetti() {
+            var duration = 3 * 1000;
+            var end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#10b981', '#3b82f6', '#f59e0b']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#10b981', '#3b82f6', '#f59e0b']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        function generatePresetButtons() {
+            const container = document.getElementById('amount-presets');
+            container.innerHTML = '';
+            
+            const currentBalance = parseFloat(userData.balance || 0);
+            
+            appSettings.presetAmounts.forEach(amt => {
+                const btn = document.createElement('button');
+                const isDisabled = currentBalance < amt || amt < appSettings.minWithdraw;
+                
+                btn.className = `amount-btn border border-slate-200 rounded-xl py-2 text-sm font-bold font-inter transition ${isDisabled ? '' : 'btn-press bg-white hover:bg-slate-50'}`;
+                btn.innerText = `৳${amt}`;
+                btn.disabled = isDisabled;
+                
+                if(!isDisabled) {
+                    btn.onclick = () => {
+                        document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        document.getElementById('custom-amount').value = amt;
+                    };
+                }
+                container.appendChild(btn);
+            });
+        }
+
+        function clearPresetSelection() {
+            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+        }
+
+        function selectMethod(btn, method) {
+            document.querySelectorAll('.gateway-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('selected-method').value = method;
+        }
+
+        async function submitWithdrawal() {
+            const amount = parseFloat(document.getElementById('custom-amount').value);
+            const number = document.getElementById('wallet-number').value;
+            const method = document.getElementById('selected-method').value;
+            const minW = parseFloat(appSettings.minWithdraw || 50);
+
+            if (!method) return showToast("পেমেন্ট মেথড সিলেক্ট করুন", "error");
+            if (!amount || amount < minW) return showToast(`মিনিমাম উইথড্র ৳ ${minW}`, "error");
+            if (amount > (userData.balance || 0)) return showToast("পর্যাপ্ত ব্যালেন্স নেই", "error");
+            if (!number || number.length < 10) return showToast("সঠিক ওয়ালেট নাম্বার দিন", "error");
+
+            const btn = document.getElementById('submit-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "<div class='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto'></div>";
+            btn.disabled = true;
+
+            try {
+                await db.runTransaction(async (t) => {
+                    const uRef = db.collection('users').doc(currentUser.id.toString());
+                    const uDoc = await t.get(uRef);
+                    if (uDoc.data().balance < amount) throw "Insufficient Balance";
+                    
+                    // Deduct balance
+                    t.update(uRef, { balance: uDoc.data().balance - amount });
+                    
+                    // Create Request
+                    const wRef = db.collection('withdrawals').doc();
+                    t.set(wRef, {
+                        userId: currentUser.id.toString(),
+                        username: currentUser.username || currentUser.first_name,
+                        amount: amount,
+                        method: method,
+                        number: number,
+                        status: 'pending', // pending, approved, rejected
+                        date: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+                
+                showToast("রিকুয়েস্ট সফলভাবে পাঠানো হয়েছে!", "success");
+                
+                // Reset Form
+                document.getElementById('custom-amount').value = "";
+                document.getElementById('wallet-number').value = "";
+                document.getElementById('selected-method').value = "";
+                document.querySelectorAll('.gateway-btn, .amount-btn').forEach(b => b.classList.remove('selected'));
+                
+            } catch (e) {
+                console.error(e);
+                showToast("সমস্যা হয়েছে, আবার চেষ্টা করুন", "error");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function loadHistory() {
+            db.collection('withdrawals')
+              .where('userId', '==', currentUser.id.toString())
+              .orderBy('date', 'desc')
+              .limit(15)
+              .onSnapshot(snap => {
+                  const div = document.getElementById('history-container');
+                  div.innerHTML = '';
+                  
+                  if(snap.empty) {
+                      div.innerHTML = `
+                        <div class="glass p-5 rounded-2xl text-center border border-slate-100">
+                            <i class="fa-solid fa-receipt text-slate-300 text-3xl mb-2"></i>
+                            <p class="text-xs text-slate-400 font-medium">কোনো রিকুয়েস্ট হিস্টোরি নেই</p>
+                        </div>`;
+                      return;
+                  }
+                  
+                  snap.forEach(doc => {
+                      const d = doc.data();
+                      
+                      let statusBadge = `<span class="text-[9px] font-bold px-2.5 py-1 rounded-md border text-amber-600 bg-amber-50 border-amber-200"><i class="fa-solid fa-spinner fa-spin mr-1"></i> পেন্ডিং</span>`;
+                      
+                      if(d.status === 'approved') {
+                          statusBadge = `<span class="text-[9px] font-bold px-2.5 py-1 rounded-md border text-emerald-600 bg-emerald-50 border-emerald-200"><i class="fa-solid fa-check mr-1"></i> এপ্রুভড</span>`;
+                      } else if (d.status === 'rejected') {
+                          statusBadge = `<span class="text-[9px] font-bold px-2.5 py-1 rounded-md border text-red-600 bg-red-50 border-red-200"><i class="fa-solid fa-xmark mr-1"></i> বাতিল</span>`;
+                      }
+
+                      // Format Date
+                      let dateStr = "Just now";
+                      if(d.date) {
+                          const dateObj = d.date.toDate();
+                          dateStr = dateObj.toLocaleDateString('en-GB') + " " + dateObj.toLocaleTimeString('en-US', {hour: '2-digit', minute:'2-digit'});
+                      }
+
+                      const html = `
+                        <div class="glass bg-white p-3.5 rounded-xl flex justify-between items-center border border-slate-100 shadow-sm transition hover:shadow-md">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 shadow-inner">
+                                    <i class="fa-solid fa-wallet text-slate-400 text-sm"></i>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">${d.method} • ${dateStr}</p>
+                                    <p class="text-xs font-bold text-slate-700 font-inter">${d.number}</p>
+                                </div>
+                            </div>
+                            <div class="text-right flex flex-col items-end gap-1.5">
+                                <p class="text-sm font-bold text-slate-800 font-inter">৳ ${d.amount}</p>
+                                ${statusBadge}
+                            </div>
+                        </div>`;
+                      div.innerHTML += html;
+                  });
+              });
+        }
+
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            const i = document.getElementById('toast-icon');
+            
+            i.className = type === 'error' ? 'fa-solid fa-circle-exclamation text-red-400 text-lg' :
+                          type === 'info' ? 'fa-solid fa-circle-info text-blue-400 text-lg' :
+                          'fa-solid fa-check-circle text-emerald-400 text-lg';
+            
+            t.style.top = '25px';
+            setTimeout(() => t.style.top = '-80px', 3000);
+        }
+    </script>
+</body>
+</html>
