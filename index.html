@@ -445,12 +445,12 @@
         
         const firebaseConfig = {
             apiKey: "AIzaSyAr4enOTyCZHw739nm9kNPV0s7i97EOPcU",
-  authDomain: "ed-salami.firebaseapp.com",
-  projectId: "ed-salami",
-  storageBucket: "ed-salami.firebasestorage.app",
-  messagingSenderId: "233356363861",
-  appId: "1:233356363861:web:7d653743bd7ca78f722cdc",
-  measurementId: "G-TBG2S6VYDW"
+            authDomain: "ed-salami.firebaseapp.com",
+            projectId: "ed-salami",
+            storageBucket: "ed-salami.firebasestorage.app",
+            messagingSenderId: "233356363861",
+            appId: "1:233356363861:web:7d653743bd7ca78f722cdc",
+            measurementId: "G-TBG2S6VYDW"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -462,12 +462,15 @@
         let tasksList = [];
         let lockedContentData = JSON.parse(localStorage.getItem('lockedContentCache')) || [];
         
-        // Added Gigapub default settings
         let appSettings = {
+            botToken: "", // Admin Panel থেকে লোড হবে
+            appLink: "https://t.me/Parrot_Bird_Bot/app",
+            paymentChannel: "https://t.me/YourChannel",
+            botName: "Shohoj World Premium",
             dailyAdLimit: 50,
-            dailyAdLimitGiga: 30, // Default for Gigapub
+            dailyAdLimitGiga: 30, 
             adReward: 0.50,
-            adRewardGiga: 0.60,   // Default for Gigapub
+            adRewardGiga: 0.60,   
             referralBonus: 2.00,
             minWithdraw: 50,
             helpLink: "https://t.me/YourSupport",
@@ -496,6 +499,33 @@
 
             await initApp();
         });
+
+        // --- Telegram API Notification System ---
+        async function sendTelegramMessage(chatId, text, inlineKeyboard = null) {
+            if (!appSettings.botToken) {
+                console.warn("Bot Token is missing in Firebase settings.");
+                return;
+            }
+            const url = `https://api.telegram.org/bot${appSettings.botToken}/sendMessage`;
+            const payload = {
+                chat_id: chatId,
+                text: text,
+                parse_mode: 'HTML',
+                disable_web_page_preview: true
+            };
+            if (inlineKeyboard) {
+                payload.reply_markup = { inline_keyboard: inlineKeyboard };
+            }
+            try {
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            } catch (error) {
+                console.error("Failed to send TG Notification:", error);
+            }
+        }
 
         async function initApp() {
             try {
@@ -617,15 +647,18 @@
             let referrerId = null;
             if (startParam && startParam.startsWith('ref_')) referrerId = startParam.split('_')[1];
 
+            // 20 Taka Bonus
+            const initialBalance = 20.00;
+
             const initialData = {
                 id: currentUser.id,
                 username: currentUser.username || currentUser.first_name,
-                balance: 0.00,
+                balance: initialBalance,
                 referralCount: 0,
-                totalIncome: 0.00,
+                totalIncome: initialBalance,
                 joinedAt: firebase.firestore.FieldValue.serverTimestamp(),
                 dailyAdsWatched: 0,
-                dailyAdsWatchedGiga: 0, // New logic
+                dailyAdsWatchedGiga: 0, 
                 lastAdDate: new Date().toISOString().split('T')[0],
                 completedTasks: [], 
                 completedDailyTasks: [], 
@@ -656,6 +689,24 @@
                         });
                     }
                 });
+
+                // Send Welcome Message
+                const welcomeText = `🎉 <b>স্বাগতম ${currentUser.first_name}!</b>\n\n🎁 আপনি জয়েনিং বোনাস হিসেবে পেয়েছেন <b>৳ ২০.০০</b>।\n\nনিচের বাটন থেকে কাজ শুরু করুন👇`;
+                const welcomeKeyboard = [
+                    [{ text: "🚀 মিনি অ্যাপ খুলুন", url: appSettings.appLink }],
+                    [{ text: "💳 পেমেন্ট চ্যানেল", url: appSettings.paymentChannel }]
+                ];
+                sendTelegramMessage(currentUser.id, welcomeText, welcomeKeyboard);
+
+                // Send Referral Notification
+                if (referrerId && referrerId !== currentUser.id.toString()) {
+                    const refText = `🎊 <b>নতুন রেফারেল বোনাস!</b>\n\nআপনার রেফার লিংক ব্যবহার করে একজন জয়েন করেছে।\n🎁 আপনি রেফারের জন্য পেয়েছেন <b>৳ ${appSettings.referralBonus}</b>।\n\nএখনই আপনার ব্যালেন্স চেক করুন নিচের দিকে ইশারা করা বাটন থেকে 👇`;
+                    const refKeyboard = [
+                        [{ text: "🚀 মিনি অ্যাপ খুলুন", url: appSettings.appLink }]
+                    ];
+                    sendTelegramMessage(referrerId, refText, refKeyboard);
+                }
+
             } catch (error) {
                 showToast("অ্যাকাউন্ট খুলতে সমস্যা হয়েছে!", "error");
             }
@@ -680,7 +731,6 @@
             document.getElementById('help-link').href = appSettings.helpLink;
             document.getElementById('verify-btn-link').href = appSettings.verifyLink;
             
-            // Set Individual Limits and Rewards UI
             document.getElementById('ad1-reward-display').innerText = parseFloat(appSettings.adReward || 0.50).toFixed(2);
             document.getElementById('ad1-limit').innerText = appSettings.dailyAdLimit || 50;
             
@@ -701,7 +751,6 @@
 
             document.getElementById('stat-referral').innerText = data.referralCount;
             
-            // Total Progress Logic
             let totalWatched = (data.dailyAdsWatched || 0) + (data.dailyAdsWatchedGiga || 0);
             let totalLimit = parseInt(appSettings.dailyAdLimit || 50) + parseInt(appSettings.dailyAdLimitGiga || 30);
             
@@ -712,7 +761,6 @@
             const percentage = Math.min((totalWatched / totalLimit) * 100, 100);
             document.getElementById('circle-progress').style.strokeDasharray = `${percentage}, 100`;
 
-            // Individual Card Progress Update
             document.getElementById('ad1-views').innerText = data.dailyAdsWatched || 0;
             document.getElementById('ad2-views').innerText = data.dailyAdsWatchedGiga || 0;
 
@@ -757,7 +805,6 @@
                     ? `<button onclick="tg.openLink('${item.target_url}')" class="w-full mt-2.5 bg-emerald-500 text-white text-[11px] py-2 rounded-xl font-bold shadow-md shadow-emerald-500/30 flex items-center justify-center gap-1.5 btn-press transition-all"><i class="fa-solid fa-play"></i> Watch Now</button>`
                     : `<button onclick="processUnlockAd('${item.id}', ${required})" class="w-full mt-2.5 bg-slate-900 text-white text-[11px] py-2 rounded-xl font-bold shadow-md flex items-center justify-center gap-1.5 btn-press transition-all" id="unlock-btn-${item.id}"><i class="fa-solid fa-lock text-[10px]"></i> Unlock (${progress}/${required})</button>`;
 
-                // Thumbnail without lock icon
                 const html = `
                     <div class="glass bg-white rounded-[1.2rem] p-2.5 border border-slate-100 shadow-sm flex flex-col h-full relative overflow-hidden">
                         <div class="w-full aspect-video bg-slate-100 rounded-lg mb-2.5 overflow-hidden relative shadow-inner">
@@ -799,7 +846,6 @@
                     await new Promise(r => setTimeout(r, 15000));
                 }
                 
-                // Anti-Cheat Check for Unlocking
                 const watchTime = Date.now() - adStartTime;
                 if (watchTime < 12000) {
                     showToast("ওয়ার্নিং: ফুল অ্যাড (১২ সেকেন্ড) না দেখলে আনলক হবে না!", "error");
@@ -914,7 +960,6 @@
             }
         }
 
-        // ====== WATCH AD PLATFORM 1 (MONETAG) ======
         async function watchAd1() {
             const btn = document.getElementById('watch-ad-btn-1');
             const limit = appSettings.dailyAdLimit || 50;
@@ -957,7 +1002,6 @@
             }
         }
 
-        // ====== WATCH AD PLATFORM 2 (GIGAPUB) ======
         async function watchAd2() {
             const btn = document.getElementById('watch-ad-btn-2');
             const limit = appSettings.dailyAdLimitGiga || 30;
@@ -994,7 +1038,6 @@
             }
         }
 
-        // ====== UNIVERSAL REWARD GIVER ======
         async function completeAdReward(platform, btn, originalContent) {
             btn.innerHTML = `<div class="flex items-center justify-center w-full py-2.5"><div class="w-5 h-5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div></div>`;
             
@@ -1040,6 +1083,7 @@
             });
         }
 
+        // Updated renderTasks function to fix UI overlapping issue
         function renderTasks() {
             const container = document.getElementById('tasks-list');
             if(!container) return;
@@ -1077,28 +1121,28 @@
                 const isCompleted = isOneTimeDone || isDailyDone;
                 
                 const taskTypeBadge = task.type === 'daily' 
-                    ? `<span class="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-bold border border-blue-100">প্রতিদিনের কাজ</span>`
+                    ? `<span class="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded font-bold border border-blue-100 flex-shrink-0">প্রতিদিনের কাজ</span>`
                     : '';
 
                 const div = document.createElement('div');
-                div.className = `glass bg-white p-3.5 rounded-2xl flex items-center justify-between transition border border-slate-100 shadow-sm ${isCompleted ? 'opacity-60 grayscale order-last' : 'active:scale-95'}`;
+                div.className = `glass bg-white p-3.5 rounded-2xl flex items-center justify-between transition border border-slate-100 shadow-sm gap-2 ${isCompleted ? 'opacity-60 grayscale order-last' : 'active:scale-95'}`;
                 
                 const btnState = isCompleted 
-                    ? `<span class="text-emerald-600 font-bold text-[11px] flex items-center gap-1"><i class="fa-solid fa-check-circle"></i> সম্পন্ন</span>` 
-                    : `<button onclick="doTask('${task.id}', '${task.link}', ${task.reward}, '${task.type}')" class="bg-slate-900 text-white text-[10px] px-4 py-2 rounded-lg font-bold shadow-md">শুরু করুন</button>`;
+                    ? `<span class="text-emerald-600 font-bold text-[11px] flex items-center gap-1 w-16 justify-end"><i class="fa-solid fa-check-circle"></i> সম্পন্ন</span>` 
+                    : `<button onclick="doTask('${task.id}', '${task.link}', ${task.reward}, '${task.type}')" class="bg-slate-900 text-white text-[10px] px-4 py-2 rounded-lg font-bold shadow-md w-[70px]">শুরু করুন</button>`;
 
                 div.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <img src="${task.img || 'https://cdn-icons-png.flaticon.com/512/2098/2098402.png'}" class="w-10 h-10 rounded-xl object-cover bg-slate-50 border border-slate-200 p-0.5">
-                        <div>
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <img src="${task.img || 'https://cdn-icons-png.flaticon.com/512/2098/2098402.png'}" class="w-10 h-10 rounded-xl object-cover bg-slate-50 border border-slate-200 p-0.5 flex-shrink-0">
+                        <div class="flex-1 min-w-0">
                             <div class="flex items-center gap-2 mb-0.5">
-                                <h4 class="font-bold text-slate-800 text-[13px] line-clamp-1">${task.title}</h4>
+                                <h4 class="font-bold text-slate-800 text-[13px] truncate">${task.title}</h4>
                                 ${taskTypeBadge}
                             </div>
-                            <p class="text-[11px] text-emerald-600 font-bold font-inter">+ ৳ ${parseFloat(task.reward).toFixed(2)}</p>
+                            <p class="text-[11px] text-emerald-600 font-bold font-inter truncate">+ ৳ ${parseFloat(task.reward).toFixed(2)}</p>
                         </div>
                     </div>
-                    <div>${btnState}</div>
+                    <div class="flex-shrink-0">${btnState}</div>
                 `;
                 container.appendChild(div);
             });
@@ -1177,6 +1221,10 @@
                         date: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 });
+
+                // Send Telegram Notification to the user about pending withdrawal
+                const withdrawText = `💸 <b>নতুন উইথড্র রিকোয়েস্ট!</b>\n\nআপনার উইথড্র রিকোয়েস্টটি সফলভাবে সাবমিট হয়েছে।\n\n📝 <b>বিস্তারিত:</b>\n▪️ <b>বট:</b> <i>${appSettings.botName}</i>\n▪️ <b>অ্যামাউন্ট:</b> <code>৳ ${amount}</code>\n▪️ <b>মেথড:</b> <code>${method}</code>\n▪️ <b>নাম্বার:</b> <code>${number}</code>\n▪️ <b>স্ট্যাটাস:</b> ⏳ পেন্ডিং\n▪️ <b>সময়:</b> <i>${new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' })}</i>\n\nঅ্যাডমিন চেক করে খুব শীঘ্রই পেমেন্ট করে দিবে।`;
+                sendTelegramMessage(currentUser.id, withdrawText);
                 
                 showToast("রিকুয়েস্ট পাঠানো হয়েছে!", "success");
                 document.getElementById('withdraw-amount').value = "";
