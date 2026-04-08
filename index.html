@@ -10,10 +10,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-    <script src='//libtl.com/sdk.js' data-zone='10487556' data-sdk='show_10487556'></script>
-    
-    <script src="https://ad.gigapub.tech/script?id=5851"></script>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -462,6 +458,9 @@
         let tasksList = [];
         let lockedContentData = JSON.parse(localStorage.getItem('lockedContentCache')) || [];
         
+        // Track currently loaded Ad Scripts
+        let loadedAdScripts = { monetag: '', gigapub: '' };
+        
         let appSettings = {
             botToken: "", // Admin Panel থেকে লোড হবে
             appLink: "https://t.me/Parrot_Bird_Bot/app",
@@ -476,7 +475,9 @@
             helpLink: "https://t.me/YourSupport",
             verifyLink: "https://t.me/YourVerifyBot",
             noticeText: "আমাদের অ্যাপে আপনাকে স্বাগতম!",
-            adLink: ""
+            adLink: "",
+            monetagZoneId: "10487556", // Default ID, admin can change
+            gigapubId: "5851"          // Default ID, admin can change
         };
 
         let currentUser = null;
@@ -499,6 +500,29 @@
 
             await initApp();
         });
+
+        // --- Ad Scripts Dynamic Injection ---
+        function loadAdScript(network, id) {
+            if (network === 'monetag') {
+                const existing = document.getElementById('monetag-script');
+                if (existing) existing.remove();
+                
+                const script = document.createElement('script');
+                script.id = 'monetag-script';
+                script.src = '//libtl.com/sdk.js';
+                script.setAttribute('data-zone', id);
+                script.setAttribute('data-sdk', 'show_' + id);
+                document.head.appendChild(script);
+            } else if (network === 'gigapub') {
+                const existing = document.getElementById('gigapub-script');
+                if (existing) existing.remove();
+                
+                const script = document.createElement('script');
+                script.id = 'gigapub-script';
+                script.src = 'https://ad.gigapub.tech/script?id=' + id;
+                document.head.appendChild(script);
+            }
+        }
 
         // --- Telegram API Notification System ---
         async function sendTelegramMessage(chatId, text, inlineKeyboard = null) {
@@ -736,6 +760,16 @@
             
             document.getElementById('ad2-reward-display').innerText = parseFloat(appSettings.adRewardGiga || 0.60).toFixed(2);
             document.getElementById('ad2-limit').innerText = appSettings.dailyAdLimitGiga || 30;
+
+            // Load Dynamically Adjusted Network IDs
+            if (appSettings.monetagZoneId && loadedAdScripts.monetag !== appSettings.monetagZoneId) {
+                loadAdScript('monetag', appSettings.monetagZoneId);
+                loadedAdScripts.monetag = appSettings.monetagZoneId;
+            }
+            if (appSettings.gigapubId && loadedAdScripts.gigapub !== appSettings.gigapubId) {
+                loadAdScript('gigapub', appSettings.gigapubId);
+                loadedAdScripts.gigapub = appSettings.gigapubId;
+            }
         }
 
         function updateUI(data) {
@@ -839,8 +873,9 @@
             btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin text-[10px]"></i> Running...`;
 
             try {
-                if (typeof show_10487556 === 'function') {
-                    await show_10487556();
+                const dynamicShowFn = window['show_' + appSettings.monetagZoneId];
+                if (typeof dynamicShowFn === 'function') {
+                    await dynamicShowFn();
                 } else {
                     showToast("অ্যাড লোড হচ্ছে, অপেক্ষা করুন...", "info");
                     await new Promise(r => setTimeout(r, 15000));
@@ -979,8 +1014,9 @@
             btn.innerHTML = `<div class="flex items-center justify-center w-full py-2.5"><div class="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div></div>`;
 
             try {
-                if (typeof show_10487556 === 'function') {
-                    await show_10487556(); 
+                const dynamicShowFn = window['show_' + appSettings.monetagZoneId];
+                if (typeof dynamicShowFn === 'function') {
+                    await dynamicShowFn(); 
                 } else {
                     showToast("অ্যাড লোড হচ্ছে...", "info");
                     await new Promise(r => setTimeout(r, 15000));
@@ -1083,7 +1119,6 @@
             });
         }
 
-        // Updated renderTasks function to fix UI overlapping issue
         function renderTasks() {
             const container = document.getElementById('tasks-list');
             if(!container) return;
