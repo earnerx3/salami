@@ -111,7 +111,6 @@
 
         ::-webkit-scrollbar { width: 0px; }
         
-        /* For 2-line title clamp */
         .line-clamp-2 {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -299,27 +298,12 @@
                     <h1 class="text-4xl font-extrabold mb-1 font-inter">৳ <span id="withdraw-balance">0.00</span></h1>
                 </div>
 
-                <div id="verify-section" class="hidden animate-fade-in">
-                    <div class="glass border border-blue-100 rounded-3xl p-6 text-center shadow-sm">
-                        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500 shadow-inner">
-                            <i class="fa-solid fa-shield-halved text-2xl"></i>
-                        </div>
-                        <h3 class="text-slate-800 font-bold text-lg mb-2">একাউন্ট ভেরিফিকেশন</h3>
-                        <p class="text-xs text-slate-500 mb-5 leading-relaxed">
-                            অভিনন্দন! আপনি ১৫টি রেফার সম্পন্ন করেছেন। টাকা তুলতে হলে একাউন্টটি ভেরিফাই করুন।
-                        </p>
-                        <a id="verify-btn-link" href="#" target="_blank" class="block w-full bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/30 btn-press text-center">
-                            এখনই ভেরিফাই করুন
-                        </a>
-                    </div>
-                </div>
-
                 <div id="withdraw-form-view" class="glass rounded-3xl p-5 shadow-sm space-y-4">
                     <div class="bg-orange-50 p-3 rounded-xl border border-orange-100 text-center mb-2">
                         <p class="text-[10px] text-orange-700 font-bold">
                            <i class="fa-solid fa-info-circle"></i> শর্ত: রেফার কমপ্লিট করুন 
                         </p>
-                        <p class="text-[11px] text-slate-500 mt-1">আপনার বর্তমান রেফার: <span id="current-ref-count" class="font-bold text-slate-800">0</span>/15</p>
+                        <p class="text-[11px] text-slate-500 mt-1">আপনার বর্তমান রেফার: <span id="current-ref-count" class="font-bold text-slate-800">0</span>/<span id="required-ref-count">15</span></p>
                     </div>
 
                     <div>
@@ -435,7 +419,6 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURATION ---
         const BOT_USERNAME = "Parrot_Bird_Bot"; 
         const BOT_APP_NAME = "app"; 
         
@@ -458,11 +441,10 @@
         let tasksList = [];
         let lockedContentData = JSON.parse(localStorage.getItem('lockedContentCache')) || [];
         
-        // Track currently loaded Ad Scripts
         let loadedAdScripts = { monetag: '', gigapub: '' };
         
         let appSettings = {
-            botToken: "", // Admin Panel থেকে লোড হবে
+            botToken: "", 
             appLink: "https://t.me/Parrot_Bird_Bot/app",
             paymentChannel: "https://t.me/YourChannel",
             botName: "Shohoj World Premium",
@@ -472,12 +454,12 @@
             adRewardGiga: 0.60,   
             referralBonus: 2.00,
             minWithdraw: 50,
+            minReferralToWithdraw: 15, // <--- New Setting added
             helpLink: "https://t.me/YourSupport",
-            verifyLink: "https://t.me/YourVerifyBot",
             noticeText: "আমাদের অ্যাপে আপনাকে স্বাগতম!",
             adLink: "",
-            monetagZoneId: "10487556", // Default ID, admin can change
-            gigapubId: "5851"          // Default ID, admin can change
+            monetagZoneId: "10487556", 
+            gigapubId: "5851"          
         };
 
         let currentUser = null;
@@ -501,7 +483,6 @@
             await initApp();
         });
 
-        // --- Ad Scripts Dynamic Injection ---
         function loadAdScript(network, id) {
             if (network === 'monetag') {
                 const existing = document.getElementById('monetag-script');
@@ -524,7 +505,6 @@
             }
         }
 
-        // --- Telegram API Notification System ---
         async function sendTelegramMessage(chatId, text, inlineKeyboard = null) {
             if (!appSettings.botToken) {
                 console.warn("Bot Token is missing in Firebase settings.");
@@ -671,7 +651,6 @@
             let referrerId = null;
             if (startParam && startParam.startsWith('ref_')) referrerId = startParam.split('_')[1];
 
-            // 20 Taka Bonus
             const initialBalance = 20.00;
 
             const initialData = {
@@ -714,7 +693,6 @@
                     }
                 });
 
-                // Send Welcome Message
                 const welcomeText = `🎉 <b>স্বাগতম ${currentUser.first_name}!</b>\n\n🎁 আপনি জয়েনিং বোনাস হিসেবে পেয়েছেন <b>৳ ২০.০০</b>।\n\nনিচের বাটন থেকে কাজ শুরু করুন👇`;
                 const welcomeKeyboard = [
                     [{ text: "🚀 মিনি অ্যাপ খুলুন", url: appSettings.appLink }],
@@ -722,7 +700,6 @@
                 ];
                 sendTelegramMessage(currentUser.id, welcomeText, welcomeKeyboard);
 
-                // Send Referral Notification
                 if (referrerId && referrerId !== currentUser.id.toString()) {
                     const refText = `🎊 <b>নতুন রেফারেল বোনাস!</b>\n\nআপনার রেফার লিংক ব্যবহার করে একজন জয়েন করেছে।\n🎁 আপনি রেফারের জন্য পেয়েছেন <b>৳ ${appSettings.referralBonus}</b>।\n\nএখনই আপনার ব্যালেন্স চেক করুন নিচের দিকে ইশারা করা বাটন থেকে 👇`;
                     const refKeyboard = [
@@ -751,9 +728,9 @@
         function applyConfig() {
             document.getElementById('welcome-text').innerText = appSettings.noticeText;
             document.getElementById('min-withdraw-display').innerText = appSettings.minWithdraw;
+            document.getElementById('required-ref-count').innerText = appSettings.minReferralToWithdraw || 15;
             document.getElementById('ref-bonus-display').innerText = appSettings.referralBonus;
             document.getElementById('help-link').href = appSettings.helpLink;
-            document.getElementById('verify-btn-link').href = appSettings.verifyLink;
             
             document.getElementById('ad1-reward-display').innerText = parseFloat(appSettings.adReward || 0.50).toFixed(2);
             document.getElementById('ad1-limit').innerText = appSettings.dailyAdLimit || 50;
@@ -761,7 +738,6 @@
             document.getElementById('ad2-reward-display').innerText = parseFloat(appSettings.adRewardGiga || 0.60).toFixed(2);
             document.getElementById('ad2-limit').innerText = appSettings.dailyAdLimitGiga || 30;
 
-            // Load Dynamically Adjusted Network IDs
             if (appSettings.monetagZoneId && loadedAdScripts.monetag !== appSettings.monetagZoneId) {
                 loadAdScript('monetag', appSettings.monetagZoneId);
                 loadedAdScripts.monetag = appSettings.monetagZoneId;
@@ -801,14 +777,6 @@
             document.getElementById('withdraw-balance').innerText = balanceTxt;
             document.getElementById('current-ref-count').innerText = data.referralCount;
             
-            if (data.referralCount >= 15) {
-                document.getElementById('withdraw-form-view').classList.add('hidden');
-                document.getElementById('verify-section').classList.remove('hidden');
-            } else {
-                document.getElementById('withdraw-form-view').classList.remove('hidden');
-                document.getElementById('verify-section').classList.add('hidden');
-            }
-
             document.getElementById('profile-name').innerText = data.username;
             document.getElementById('profile-id').innerText = data.id;
 
@@ -1226,7 +1194,10 @@
             const number = document.getElementById('withdraw-number').value;
             const method = document.getElementById('selected-gateway').value;
             const minW = appSettings.minWithdraw || 50;
+            const reqRef = parseInt(appSettings.minReferralToWithdraw || 15);
+            const currentRef = parseInt(userData.referralCount || 0);
 
+            if (currentRef < reqRef) return showToast(`উইথড্র করতে ন্যূনতম ${reqRef} টি রেফার প্রয়োজন!`, "error");
             if (!amount || amount < minW) return showToast(`মিনিমাম উইথড্র ৳ ${minW}`, "error");
             if (amount > userData.balance) return showToast("পর্যাপ্ত ব্যালেন্স নেই", "error");
             if (!number || number.length < 9) return showToast("সঠিক নাম্বার দিন", "error");
@@ -1257,7 +1228,6 @@
                     });
                 });
 
-                // Send Telegram Notification to the user about pending withdrawal
                 const withdrawText = `💸 <b>নতুন উইথড্র রিকোয়েস্ট!</b>\n\nআপনার উইথড্র রিকোয়েস্টটি সফলভাবে সাবমিট হয়েছে।\n\n📝 <b>বিস্তারিত:</b>\n▪️ <b>বট:</b> <i>${appSettings.botName}</i>\n▪️ <b>অ্যামাউন্ট:</b> <code>৳ ${amount}</code>\n▪️ <b>মেথড:</b> <code>${method}</code>\n▪️ <b>নাম্বার:</b> <code>${number}</code>\n▪️ <b>স্ট্যাটাস:</b> ⏳ পেন্ডিং\n▪️ <b>সময়:</b> <i>${new Date().toLocaleString('en-US', { timeZone: 'Asia/Dhaka' })}</i>\n\nঅ্যাডমিন চেক করে খুব শীঘ্রই পেমেন্ট করে দিবে।`;
                 sendTelegramMessage(currentUser.id, withdrawText);
                 
